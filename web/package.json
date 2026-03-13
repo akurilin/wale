@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "stop": "lsof -ti:3000 | xargs kill -9 2>/dev/null; echo 'Stopped all processes on port 3000'"
+    "stop": "lsof -ti:3000 | xargs kill -9 2>/dev/null; echo 'Stopped all processes on port 3000'",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@tiptap/extension-placeholder": "^3.20.1",
@@ -19,6 +21,7 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

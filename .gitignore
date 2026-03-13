@@ -40,6 +40,12 @@ next-env.d.ts
 *.swp
 *.swo
 
+# playwright
+web/test-results/
+web/playwright-report/
+web/blob-report/
+web/playwright/.cache/
+
 # OS
 .DS_Store
 Thumbs.db

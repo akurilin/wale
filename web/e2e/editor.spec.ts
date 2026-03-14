@@ -2,6 +2,10 @@ import { test, expect, type Page } from "@playwright/test";
 import os from "os";
 
 const mod = os.platform() === "darwin" ? "Meta" : "Control";
+const emptyDocument = {
+  type: "doc",
+  content: [{ type: "paragraph" }],
+};
 
 async function getEditorJSON(page: Page) {
   return page.evaluate(() => window.tiptapEditor?.getJSON());
@@ -13,14 +17,54 @@ test.describe("TipTap Editor", () => {
     await page.waitForFunction(() => !!window.tiptapEditor);
   });
 
-  test("renders an empty editor on load", async ({ page }) => {
+  test("renders starter content on load", async ({ page }) => {
     const json = await getEditorJSON(page);
+    const content = json?.content;
+
     expect(json?.type).toBe("doc");
+    expect(content).toBeDefined();
+    expect(content!.length).toBe(11);
+
+    expect(content![0]).toMatchObject({
+      type: "heading",
+      attrs: { level: 1 },
+    });
+    expect(content![0].content?.[0].text).toBe(
+      "Designing a Better Writing Ritual"
+    );
+
+    expect(content![2]).toMatchObject({
+      type: "heading",
+      attrs: { level: 2 },
+    });
+    expect(content![2].content?.[0].text).toBe("Start With a Simple Frame");
+
+    expect(content![1]).toMatchObject({
+      type: "paragraph",
+    });
+    expect(content![1].content).toContainEqual({
+      type: "text",
+      text: "steady intention",
+      marks: [{ type: "bold" }],
+    });
+
+    expect(content![4]).toMatchObject({
+      type: "paragraph",
+    });
+    expect(content![4].content).toContainEqual({
+      type: "text",
+      text: "light",
+      marks: [{ type: "italic" }],
+    });
   });
 
   test("types formatted content and validates document structure", async ({
     page,
   }) => {
+    await page.evaluate((doc) => {
+      window.tiptapEditor?.commands.setContent(doc);
+    }, emptyDocument);
+
     const editor = page.locator(".tiptap");
     await editor.click();
 

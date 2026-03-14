@@ -70,6 +70,8 @@ supabase stop    # Stop local Supabase stack
 
 Use `agent-browser` (dev dependency in `web/`) as the default tool for visual verification and browser-based QA. Always invoke via `npx` from the `web/` directory.
 
+After making changes, always perform manual QA on the affected parts of the app to verify the result looks as expected before handing off the work.
+
 **Always use a random port** to avoid clashing with the user or other agents:
 
 ```bash

@@ -46,13 +46,26 @@ All commands run from the `web/` directory:
 
 ```bash
 cd web
-npm run dev      # Start dev server (localhost:3000)
-npm run build    # Production build
-npm run lint     # ESLint (flat config, Next.js + TypeScript rules)
-npm run start    # Start production server
+npm run dev          # Start dev server (localhost:3000)
+npm run build        # Production build
+npm run lint         # ESLint (flat config, Next.js + TypeScript rules)
+npm run format:check # Check formatting (Prettier)
+npm run typecheck    # TypeScript type checking (tsc --noEmit)
+npm run start        # Start production server
 ```
 
 After completing code changes, always run the linter and the formatter before handing off work. Use the repo's lint command (`npm run lint`) and the repo's formatter command if one is available. If the formatter command is not defined yet, call that out explicitly in your handoff instead of skipping it silently.
+
+### Pre-commit hooks
+
+Husky + lint-staged runs automatically on `git commit`:
+- **ESLint** (`--fix`) + **Prettier** (`--write`) on staged `.ts/.tsx/.js/.jsx` files
+- **Prettier** on staged `.json/.md/.css/.yaml` files
+- **ShellCheck** on staged `.sh` files (requires `brew install shellcheck`)
+
+### CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on push to `main` and PRs: ESLint, Prettier, TypeScript, Next.js build, and ShellCheck.
 
 Supabase local dev (from project root):
 ```bash
@@ -67,7 +80,8 @@ supabase stop    # Stop local Supabase stack
 - **Comments**: Stored as marks in the TipTap document tree, not as HTML markers
 - **Path alias**: `@/*` maps to `web/*` in TypeScript/imports
 - **CSS**: Tailwind 4 with `@import "tailwindcss"` syntax. TipTap editor styles are in `web/app/globals.css`
-- **ESLint**: Flat config (`eslint.config.mjs`) using `eslint-config-next` core-web-vitals + TypeScript presets
+- **ESLint**: Flat config (`eslint.config.mjs`) using `eslint-config-next` core-web-vitals + TypeScript presets + `eslint-config-prettier`
+- **Formatting**: Prettier (config in `web/.prettierrc`)
 
 ## Manual QA
 

@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Format check (Prettier)
+        run: npm run format:check
+
+      - name: Typecheck (TypeScript)
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find shell scripts
+        id: find-scripts
+        run: |
+          scripts=$(find . -name '*.sh' -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/.git/*')
+          if [ -z "$scripts" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: ShellCheck
+        if: steps.find-scripts.outputs.found == 'true'
+        run: find . -name '*.sh' -not -path '*/node_modules/*' -not -path '*/.next/*' -not -path '*/.git/*' -print0 | xargs -0 shellcheck

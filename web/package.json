@@ -10,6 +10,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "cd .. && husky web/.husky",
     "stop": "lsof -ti:3000 | xargs kill -9 2>/dev/null; echo 'Stopped all processes on port 3000'",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
@@ -50,8 +53,24 @@
     "agent-browser": "^0.19.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.3",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,mts,js,mjs,cjs,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,yaml,yml}": [
+      "prettier --write"
+    ],
+    "*.sh": [
+      "shellcheck"
+    ]
   }
 }

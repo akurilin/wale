@@ -35,7 +35,8 @@ const validRequest: AssistantRequest = {
   ],
   documentContext: {
     selectionText: "This paragraph needs work.",
-    excerpt: "This paragraph needs work. The rest of the draft is about rituals.",
+    excerpt:
+      "This paragraph needs work. The rest of the draft is about rituals.",
   },
 };
 
@@ -48,7 +49,9 @@ describe("runAssistant", () => {
 
   it("uses the server-owned prompt and validated messages", async () => {
     const model = { id: "mock-model" };
-    const convertedMessages = [{ role: "user", content: [{ type: "text", text: "Hello" }] }];
+    const convertedMessages = [
+      { role: "user", content: [{ type: "text", text: "Hello" }] },
+    ];
     const result = {
       toUIMessageStreamResponse: vi.fn(),
     };
@@ -61,7 +64,9 @@ describe("runAssistant", () => {
 
     expect(response).toBe(result);
     expect(anthropicMock).toHaveBeenCalledWith("claude-haiku-4-5");
-    expect(convertToModelMessagesMock).toHaveBeenCalledWith(validRequest.messages);
+    expect(convertToModelMessagesMock).toHaveBeenCalledWith(
+      validRequest.messages,
+    );
     expect(streamTextMock).toHaveBeenCalledWith(
       expect.objectContaining({
         model,

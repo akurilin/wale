@@ -26,19 +26,14 @@ docs/plan.md   — Architecture plan and data model design
 
 ## Node Version
 
-This project requires Node 22 for Node-related work. Only initialize `nvm` and run `nvm use` before commands that depend on Node, such as `node`, `npm`, `npx`, or Next.js tooling. Do not do this for unrelated shell commands like `git`, `rg`, `ls`, or file operations.
+This project requires Node 22 for Node-related work. Use `./scripts/with-node.sh` from the `web/` directory for commands that depend on Node, such as `node`, `npm`, `npx`, or Next.js tooling. Do not use it for unrelated shell commands like `git`, `rg`, `ls`, or file operations.
 
-Before running Node-related commands, ensure you're using the correct version:
+The wrapper loads `nvm`, uses the version from the repo's `.nvmrc`, installs it if needed, and then runs the command without printing the full `nvm` bootstrap every time.
 
 ```bash
-if ! command -v nvm >/dev/null 2>&1; then
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # Load nvm in non-interactive shells
-fi
-nvm use   # reads .nvmrc automatically
+cd web
+./scripts/with-node.sh npm run lint
 ```
-
-If Node 22 isn't installed, run `nvm install` first.
 
 ## Commands
 
@@ -46,15 +41,16 @@ All commands run from the `web/` directory:
 
 ```bash
 cd web
-npm run dev          # Start dev server (localhost:3000)
-npm run build        # Production build
-npm run lint         # ESLint (flat config, Next.js + TypeScript rules)
-npm run format:check # Check formatting (Prettier)
-npm run typecheck    # TypeScript type checking (tsc --noEmit)
-npm run start        # Start production server
+./scripts/with-node.sh npm run dev          # Start dev server (localhost:3000)
+./scripts/with-node.sh npm run build        # Production build
+./scripts/with-node.sh npm run lint         # ESLint (flat config, Next.js + TypeScript rules)
+./scripts/with-node.sh npm run format       # Apply formatting (Prettier)
+./scripts/with-node.sh npm run format:check # Check formatting (Prettier)
+./scripts/with-node.sh npm run typecheck    # TypeScript type checking (tsc --noEmit)
+./scripts/with-node.sh npm run start        # Start production server
 ```
 
-After completing code changes, always run the linter and the formatter before handing off work. Use the repo's lint command (`npm run lint`) and the repo's formatter command if one is available. If the formatter command is not defined yet, call that out explicitly in your handoff instead of skipping it silently.
+After completing code changes, always run the linter and the formatter before handing off work. Use the repo's lint command (`./scripts/with-node.sh npm run lint`) and apply formatting with the repo's formatter command (`./scripts/with-node.sh npm run format`). Use `./scripts/with-node.sh npm run format:check` only when you specifically need a verification-only check, such as CI.
 
 ### Pre-commit hooks
 
@@ -87,24 +83,24 @@ supabase stop    # Stop local Supabase stack
 
 Use `agent-browser` (dev dependency in `web/`) as the **only** tool for visual verification and browser-based QA. Always invoke via `npx` from the `web/` directory. **Never use Playwright directly for manual QA** — always use `agent-browser`.
 
-After making changes, always perform manual QA on the affected parts of the app to verify the result looks as expected before handing off the work.
+Use manual QA during active development, especially for UI, interaction, and visual changes. If the task is only regression checking or validation, prefer the relevant automated test suite instead of treating manual QA as required.
 
 **Always use a random port** to avoid clashing with the user or other agents:
 
 ```bash
 # 1. Pick a random port and start a dev server on it
-PORT=$(shuf -i 3100-3999 -n 1)
-cd web && npx next dev --port $PORT &
+PORT=$(jot -r 1 3100 3999)
+cd web && ./scripts/with-node.sh npx next dev --port $PORT &
 
 # 2. Use agent-browser against that port
-npx agent-browser open http://localhost:$PORT
-npx agent-browser screenshot [path]            # Viewport screenshot
-npx agent-browser screenshot --full [path]     # Full-page screenshot
-npx agent-browser snapshot                     # Accessibility tree with element refs
-npx agent-browser click @ref                   # Click an element by ref
-npx agent-browser keyboard type "text"         # Type text
-npx agent-browser press Enter                  # Press a key
-npx agent-browser close                        # Close the browser
+./scripts/with-node.sh npx agent-browser open http://localhost:$PORT
+./scripts/with-node.sh npx agent-browser screenshot [path]            # Viewport screenshot
+./scripts/with-node.sh npx agent-browser screenshot --full [path]     # Full-page screenshot
+./scripts/with-node.sh npx agent-browser snapshot                     # Accessibility tree with element refs
+./scripts/with-node.sh npx agent-browser click @ref                   # Click an element by ref
+./scripts/with-node.sh npx agent-browser keyboard type "text"         # Type text
+./scripts/with-node.sh npx agent-browser press Enter                  # Press a key
+./scripts/with-node.sh npx agent-browser close                        # Close the browser
 
 # 3. Kill the dev server when done
 lsof -ti:$PORT | xargs kill -9 2>/dev/null

@@ -11,7 +11,10 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse();
   } catch (error) {
-    if (error instanceof AssistantRequestError || error instanceof SyntaxError) {
+    if (
+      error instanceof AssistantRequestError ||
+      error instanceof SyntaxError
+    ) {
       return Response.json(
         {
           error: "Invalid assistant request payload.",

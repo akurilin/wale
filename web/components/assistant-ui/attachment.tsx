@@ -1,6 +1,12 @@
 "use client";
 
-import { PropsWithChildren, useEffect, useState, type FC } from "react";
+import {
+  PropsWithChildren,
+  useEffect,
+  useMemo,
+  useState,
+  type FC,
+} from "react";
 import { XIcon, PlusIcon, FileText } from "lucide-react";
 import {
   AttachmentPrimitive,
@@ -22,25 +28,21 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { cn } from "@/lib/utils";
 
 const useFileSrc = (file: File | undefined) => {
-  const [src, setSrc] = useState<string | undefined>(undefined);
+  const src = useMemo(
+    () => (file ? URL.createObjectURL(file) : undefined),
+    [file],
+  );
 
   useEffect(() => {
-    if (!file) {
-      setSrc(undefined);
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setSrc(objectUrl);
-
     return () => {
-      URL.revokeObjectURL(objectUrl);
+      if (src) {
+        URL.revokeObjectURL(src);
+      }
     };
-  }, [file]);
+  }, [src]);
 
   return src;
 };
@@ -67,6 +69,8 @@ type AttachmentPreviewProps = {
 const AttachmentPreview: FC<AttachmentPreviewProps> = ({ src }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   return (
+    // Blob/object URLs for local attachment previews are not optimized by next/image.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt="Image Preview"
@@ -88,9 +92,7 @@ const AttachmentPreviewDialog: FC<PropsWithChildren> = ({ children }) => {
 
   return (
     <Dialog>
-      <DialogTrigger
-        className="aui-attachment-preview-trigger cursor-pointer transition-colors hover:bg-accent/50"
-      >
+      <DialogTrigger className="aui-attachment-preview-trigger cursor-pointer transition-colors hover:bg-accent/50">
         {children}
       </DialogTrigger>
       <DialogContent className="aui-attachment-preview-dialog-content p-2 sm:max-w-3xl [&>button]:rounded-full [&>button]:bg-foreground/60 [&>button]:p-1 [&>button]:opacity-100 [&>button]:ring-0! [&_svg]:text-background [&>button]:hover:[&_svg]:text-destructive">
@@ -151,7 +153,13 @@ const AttachmentUI: FC = () => {
         )}
       >
         <AttachmentPreviewDialog>
-          <TooltipTrigger className="aui-attachment-tile size-14 cursor-pointer overflow-hidden rounded-[calc(var(--composer-radius)-var(--composer-padding))] border bg-muted transition-opacity hover:opacity-75" role="button" aria-label={`${typeLabel} attachment`}><AttachmentThumb /></TooltipTrigger>
+          <TooltipTrigger
+            className="aui-attachment-tile size-14 cursor-pointer overflow-hidden rounded-[calc(var(--composer-radius)-var(--composer-padding))] border bg-muted transition-opacity hover:opacity-75"
+            role="button"
+            aria-label={`${typeLabel} attachment`}
+          >
+            <AttachmentThumb />
+          </TooltipTrigger>
         </AttachmentPreviewDialog>
         {isComposer && <AttachmentRemove />}
       </AttachmentPrimitive.Root>
@@ -164,7 +172,9 @@ const AttachmentUI: FC = () => {
 
 const AttachmentRemove: FC = () => {
   return (
-    <AttachmentPrimitive.Remove className="aui-attachment-tile-remove absolute top-1.5 right-1.5 size-3.5 rounded-full bg-white text-muted-foreground opacity-100 shadow-sm hover:bg-white [&_svg]:text-black hover:[&_svg]:text-destructive"><XIcon className="aui-attachment-remove-icon size-3 dark:stroke-[2.5px]" /></AttachmentPrimitive.Remove>
+    <AttachmentPrimitive.Remove className="aui-attachment-tile-remove absolute top-1.5 right-1.5 size-3.5 rounded-full bg-white text-muted-foreground opacity-100 shadow-sm hover:bg-white [&_svg]:text-black hover:[&_svg]:text-destructive">
+      <XIcon className="aui-attachment-remove-icon size-3 dark:stroke-[2.5px]" />
+    </AttachmentPrimitive.Remove>
   );
 };
 
@@ -188,6 +198,11 @@ export const ComposerAttachments: FC = () => {
 
 export const ComposerAddAttachment: FC = () => {
   return (
-    <ComposerPrimitive.AddAttachment className="aui-composer-add-attachment size-8 rounded-full p-1 font-semibold text-xs hover:bg-muted-foreground/15 dark:border-muted-foreground/15 dark:hover:bg-muted-foreground/30" aria-label="Add Attachment"><PlusIcon className="aui-attachment-add-icon size-5 stroke-[1.5px]" /></ComposerPrimitive.AddAttachment>
+    <ComposerPrimitive.AddAttachment
+      className="aui-composer-add-attachment size-8 rounded-full p-1 font-semibold text-xs hover:bg-muted-foreground/15 dark:border-muted-foreground/15 dark:hover:bg-muted-foreground/30"
+      aria-label="Add Attachment"
+    >
+      <PlusIcon className="aui-attachment-add-icon size-5 stroke-[1.5px]" />
+    </ComposerPrimitive.AddAttachment>
   );
 };

@@ -25,7 +25,9 @@ docs/plan.md   — Architecture plan and data model design
 
 ## Node Version
 
-This project requires Node 22. Before running any commands, ensure you're using the correct version:
+This project requires Node 22 for Node-related work. Only initialize `nvm` and run `nvm use` before commands that depend on Node, such as `node`, `npm`, `npx`, or Next.js tooling. Do not do this for unrelated shell commands like `git`, `rg`, `ls`, or file operations.
+
+Before running Node-related commands, ensure you're using the correct version:
 
 ```bash
 if ! command -v nvm >/dev/null 2>&1; then

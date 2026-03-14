@@ -1,6 +1,7 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+`AGENTS.md` is a symlink to this file, so both paths provide the same repository instructions.
 
 ## Project Overview
 
@@ -51,6 +52,8 @@ npm run lint     # ESLint (flat config, Next.js + TypeScript rules)
 npm run start    # Start production server
 ```
 
+After completing code changes, always run the linter and the formatter before handing off work. Use the repo's lint command (`npm run lint`) and the repo's formatter command if one is available. If the formatter command is not defined yet, call that out explicitly in your handoff instead of skipping it silently.
+
 Supabase local dev (from project root):
 ```bash
 supabase start   # Start local Supabase stack
@@ -68,7 +71,7 @@ supabase stop    # Stop local Supabase stack
 
 ## Manual QA
 
-Use `agent-browser` (dev dependency in `web/`) as the default tool for visual verification and browser-based QA. Always invoke via `npx` from the `web/` directory.
+Use `agent-browser` (dev dependency in `web/`) as the **only** tool for visual verification and browser-based QA. Always invoke via `npx` from the `web/` directory. **Never use Playwright directly for manual QA** — always use `agent-browser`.
 
 After making changes, always perform manual QA on the affected parts of the app to verify the result looks as expected before handing off the work.
 

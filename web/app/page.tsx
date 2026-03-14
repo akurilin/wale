@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import type { Editor, JSONContent } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { Assistant } from "./assistant";
 
 declare global {
   interface Window {
@@ -156,9 +157,14 @@ export default function Home() {
   }, [editor]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="paper">
-        <EditorContent editor={editor} />
+    <div className="flex h-screen">
+      <div className="flex-1 overflow-y-auto py-12 px-4 bg-gray-50">
+        <div className="paper">
+          <EditorContent editor={editor} />
+        </div>
+      </div>
+      <div className="w-[400px] border-l border-border">
+        <Assistant />
       </div>
     </div>
   );

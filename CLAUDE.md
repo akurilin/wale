@@ -55,6 +55,7 @@ After completing code changes, always run the linter and the formatter before ha
 ### Pre-commit hooks
 
 Husky + lint-staged runs automatically on `git commit`:
+- **gitleaks** scans staged changes for secrets (requires `brew install gitleaks`)
 - **ESLint** (`--fix`) + **Prettier** (`--write`) on staged `.ts/.tsx/.js/.jsx` files
 - **Prettier** on staged `.json/.md/.css/.yaml` files
 - **ShellCheck** on staged `.sh` files (requires `brew install shellcheck`)

@@ -1,1 +1,2 @@
+gitleaks protect --staged
 cd web && npx lint-staged

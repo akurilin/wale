@@ -41,7 +41,8 @@
 - **Prettier** — Code formatting.
 - **Husky + lint-staged** — Pre-commit hooks for linting and formatting.
 - **ShellCheck** — Linting for shell scripts.
-- **GitHub Actions CI** — Runs ESLint, Prettier, TypeScript, Next.js build, and ShellCheck on push/PR.
+- **gitleaks** — Secret detection in pre-commit hook and CI. Prevents accidental commits of API keys, tokens, etc.
+- **GitHub Actions CI** — Runs ESLint, Prettier, TypeScript, Next.js build, ShellCheck, and gitleaks on push/PR.
 
 ## Testing
 

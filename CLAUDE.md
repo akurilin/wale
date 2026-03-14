@@ -23,6 +23,20 @@ supabase/      — Supabase local dev config and migrations
 docs/plan.md   — Architecture plan and data model design
 ```
 
+## Node Version
+
+This project requires Node 22. Before running any commands, ensure you're using the correct version:
+
+```bash
+if ! command -v nvm >/dev/null 2>&1; then
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # Load nvm in non-interactive shells
+fi
+nvm use   # reads .nvmrc automatically
+```
+
+If Node 22 isn't installed, run `nvm install` first.
+
 ## Commands
 
 All commands run from the `web/` directory:
@@ -76,3 +90,7 @@ lsof -ti:$PORT | xargs kill -9 2>/dev/null
 ```
 
 Never use port 3000 for agent QA — that's reserved for the user's own dev server.
+
+## Temporary Files
+
+All temporary files (screenshots, logs, scratch files, etc.) must be written under `/tmp/`, not inside the repository. Use a subdirectory like `/tmp/wale/` to keep things organized.

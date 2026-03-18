@@ -14,6 +14,8 @@ export const Assistant = () => {
         body: {
           mode: "chat",
           messages,
+          // The backend also accepts `documentContext` with `selectionText`
+          // and/or `excerpt` once the editor-side capture is wired up.
         },
       }),
     }),

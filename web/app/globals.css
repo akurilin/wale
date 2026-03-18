@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* Keep the `shadcn` package installed while we import its shared Tailwind helpers here. */
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));

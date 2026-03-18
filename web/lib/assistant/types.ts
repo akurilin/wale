@@ -3,6 +3,9 @@ import { z } from "zod";
 
 const invalidAssistantRequestMessage = "Invalid assistant request payload.";
 
+// The assistant request can carry focused editor context in addition to chat history.
+// Expand this object as we add more client-side wiring, and keep app/assistant.tsx
+// aligned so the UI keeps sending the fields the backend already understands.
 const documentContextSchema = z
   .object({
     selectionText: z.string().trim().min(1).optional(),

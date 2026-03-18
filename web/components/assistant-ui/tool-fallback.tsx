@@ -1,5 +1,9 @@
 "use client";
 
+// Likely scaffold-generated for assistant-ui. This file is intentionally
+// unreferenced today, but we are keeping the baseline around so we do not have
+// to regenerate it if tool-call rendering is enabled later.
+
 import { memo, useCallback, useRef, useState } from "react";
 import {
   AlertCircleIcon,

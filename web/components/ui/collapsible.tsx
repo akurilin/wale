@@ -1,5 +1,9 @@
 "use client";
 
+// Likely scaffold-generated alongside the unused assistant tool fallback UI.
+// Currently unreferenced, but kept so the scaffolded pieces still fit together
+// if we enable that path later.
+
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 
 function Collapsible({ ...props }: CollapsiblePrimitive.Root.Props) {

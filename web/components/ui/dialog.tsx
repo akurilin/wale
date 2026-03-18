@@ -1,5 +1,9 @@
 "use client";
 
+// Likely scaffold-generated alongside the unused assistant attachment UI.
+// Currently unreferenced, but kept so the scaffolded pieces still fit together
+// if we enable that path later.
+
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 

@@ -49,6 +49,9 @@ web/playwright-report/
 web/blob-report/
 web/playwright/.cache/
 
+# document data (local file persistence)
+data/
+
 # OS
 .DS_Store
 Thumbs.db

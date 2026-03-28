@@ -26,46 +26,12 @@ test.describe("TipTap Editor", () => {
     await page.waitForFunction(() => !!window.tiptapEditor);
   });
 
-  test("renders starter content on load", async ({ page }) => {
+  test("renders empty document on load", async ({ page }) => {
     const json = await getEditorJSON(page);
-    const content = json?.content ?? [];
 
     expect(json?.type).toBe("doc");
-    expect(content).toHaveLength(11);
-
-    expect(content[0]).toMatchObject({
-      type: "heading",
-      attrs: { level: 1 },
-    });
-    expect(getNodeText(getChildNodes(content[0])[0])).toBe(
-      "Designing a Better Writing Ritual",
-    );
-
-    expect(content[2]).toMatchObject({
-      type: "heading",
-      attrs: { level: 2 },
-    });
-    expect(getNodeText(getChildNodes(content[2])[0])).toBe(
-      "Start With a Simple Frame",
-    );
-
-    expect(content[1]).toMatchObject({
-      type: "paragraph",
-    });
-    expect(getChildNodes(content[1])).toContainEqual({
-      type: "text",
-      text: "steady intention",
-      marks: [{ type: "bold" }],
-    });
-
-    expect(content[4]).toMatchObject({
-      type: "paragraph",
-    });
-    expect(getChildNodes(content[4])).toContainEqual({
-      type: "text",
-      text: "light",
-      marks: [{ type: "italic" }],
-    });
+    expect(json?.content).toHaveLength(1);
+    expect(json?.content?.[0]).toMatchObject({ type: "paragraph" });
   });
 
   test("types formatted content and validates document structure", async ({

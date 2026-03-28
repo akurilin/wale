@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
-import type { Editor, JSONContent } from "@tiptap/core";
+import type { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { useDocumentSync } from "@/lib/document/use-document-sync";
 import { Assistant } from "./assistant";
 
 declare global {
@@ -13,126 +15,10 @@ declare global {
   }
 }
 
-const defaultDocument: JSONContent = {
-  type: "doc",
-  content: [
-    {
-      type: "heading",
-      attrs: { level: 1 },
-      content: [{ type: "text", text: "Designing a Better Writing Ritual" }],
-    },
-    {
-      type: "paragraph",
-      content: [
-        {
-          type: "text",
-          text: "A good writing session starts before the first sentence. A small ritual, a clear screen, and a ",
-        },
-        {
-          type: "text",
-          text: "steady intention",
-          marks: [{ type: "bold" }],
-        },
-        {
-          type: "text",
-          text: " can make the blank page feel less hostile.",
-        },
-      ],
-    },
-    {
-      type: "heading",
-      attrs: { level: 2 },
-      content: [{ type: "text", text: "Start With a Simple Frame" }],
-    },
-    {
-      type: "paragraph",
-      content: [
-        {
-          type: "text",
-          text: "Rather than chasing the perfect opening, begin with a rough frame. A title, a short thesis, and a few supporting notes are often enough to get momentum moving.",
-        },
-      ],
-    },
-    {
-      type: "paragraph",
-      content: [
-        { type: "text", text: "This approach keeps the draft " },
-        {
-          type: "text",
-          text: "light",
-          marks: [{ type: "italic" }],
-        },
-        {
-          type: "text",
-          text: " and flexible, which makes revision easier once the real shape of the piece appears.",
-        },
-      ],
-    },
-    {
-      type: "heading",
-      attrs: { level: 2 },
-      content: [{ type: "text", text: "Let the Middle Be Messy" }],
-    },
-    {
-      type: "paragraph",
-      content: [
-        {
-          type: "text",
-          text: "Most drafts improve when the writer stops editing every line on the way down. It is usually better to collect raw material first and organize it after the core idea is visible.",
-        },
-      ],
-    },
-    {
-      type: "paragraph",
-      content: [
-        {
-          type: "text",
-          text: "When a section feels uncertain, leave a short note to yourself, mark the important phrase in ",
-        },
-        {
-          type: "text",
-          text: "bold",
-          marks: [{ type: "bold" }],
-        },
-        {
-          type: "text",
-          text: ", and keep going instead of stalling.",
-        },
-      ],
-    },
-    {
-      type: "heading",
-      attrs: { level: 2 },
-      content: [{ type: "text", text: "Finish by Tightening the Edges" }],
-    },
-    {
-      type: "paragraph",
-      content: [
-        {
-          type: "text",
-          text: "The last pass is where tone, rhythm, and transitions come into focus. Read slowly, trim repeated thoughts, and keep only the sentences that still feel necessary.",
-        },
-      ],
-    },
-    {
-      type: "paragraph",
-      content: [
-        { type: "text", text: "A draft does not need to feel " },
-        {
-          type: "text",
-          text: "finished",
-          marks: [{ type: "italic" }],
-        },
-        {
-          type: "text",
-          text: " to be useful. It only needs to leave you with something clearer than what you had before.",
-        },
-      ],
-    },
-  ],
-};
+function EditorPage() {
+  const searchParams = useSearchParams();
+  const filename = searchParams.get("doc") ?? "untitled.json";
 
-export default function Home() {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -142,10 +28,11 @@ export default function Home() {
         placeholder: "Start writing...",
       }),
     ],
-    content: defaultDocument,
     autofocus: true,
     immediatelyRender: false,
   });
+
+  useDocumentSync(editor, filename);
 
   useEffect(() => {
     if (editor && process.env.NODE_ENV !== "production") {
@@ -167,5 +54,13 @@ export default function Home() {
         <Assistant />
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <EditorPage />
+    </Suspense>
   );
 }

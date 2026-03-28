@@ -1,14 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { anthropicMock, convertToModelMessagesMock, streamTextMock } =
-  vi.hoisted(() => ({
-    anthropicMock: vi.fn(),
-    convertToModelMessagesMock: vi.fn(),
-    streamTextMock: vi.fn(),
-  }));
+const mockModel = { id: "mock-model" };
 
-vi.mock("@ai-sdk/anthropic", () => ({
-  anthropic: anthropicMock,
+const { convertToModelMessagesMock, streamTextMock } = vi.hoisted(() => ({
+  convertToModelMessagesMock: vi.fn(),
+  streamTextMock: vi.fn(),
+}));
+
+vi.mock("./model", () => ({
+  model: mockModel,
+  modelConfig: {
+    provider: "Anthropic",
+    modelId: "claude-haiku-4-5",
+    displayName: "Claude Haiku 4.5",
+  },
 }));
 
 vi.mock("ai", async () => {
@@ -42,13 +47,11 @@ const validRequest: AssistantRequest = {
 
 describe("runAssistant", () => {
   beforeEach(() => {
-    anthropicMock.mockReset();
     convertToModelMessagesMock.mockReset();
     streamTextMock.mockReset();
   });
 
   it("uses the server-owned prompt and validated messages", async () => {
-    const model = { id: "mock-model" };
     const convertedMessages = [
       { role: "user", content: [{ type: "text", text: "Hello" }] },
     ];
@@ -56,20 +59,18 @@ describe("runAssistant", () => {
       toUIMessageStreamResponse: vi.fn(),
     };
 
-    anthropicMock.mockReturnValue(model);
     convertToModelMessagesMock.mockResolvedValue(convertedMessages);
     streamTextMock.mockReturnValue(result);
 
     const response = await runAssistant(validRequest);
 
     expect(response).toBe(result);
-    expect(anthropicMock).toHaveBeenCalledWith("claude-haiku-4-5");
     expect(convertToModelMessagesMock).toHaveBeenCalledWith(
       validRequest.messages,
     );
     expect(streamTextMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        model,
+        model: mockModel,
         messages: convertedMessages,
         system: expect.stringContaining("This paragraph needs work."),
       }),

@@ -3,12 +3,13 @@ import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   const file = req.nextUrl.searchParams.get("file");
+  const useTempStorage = req.nextUrl.searchParams.get("tmp") === "true";
   if (!file) {
     return NextResponse.json({ error: "Missing file param." }, { status: 400 });
   }
 
   try {
-    const raw = await readDocument(file);
+    const raw = await readDocument(file, { temporary: useTempStorage });
     return new NextResponse(raw, {
       headers: { "Content-Type": "application/json" },
     });
@@ -22,6 +23,7 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   const file = req.nextUrl.searchParams.get("file");
+  const useTempStorage = req.nextUrl.searchParams.get("tmp") === "true";
   if (!file) {
     return NextResponse.json({ error: "Missing file param." }, { status: 400 });
   }
@@ -41,7 +43,7 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    await writeDocument(file, body.content);
+    await writeDocument(file, body.content, { temporary: useTempStorage });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

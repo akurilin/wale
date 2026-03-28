@@ -1,13 +1,17 @@
 import fs from "fs/promises";
 import path from "path";
 import { afterEach, describe, expect, it } from "vitest";
-import { readDocument, writeDocument } from "./storage";
+import {
+  DATA_DIR,
+  TEMP_DATA_DIR,
+  readDocument,
+  writeDocument,
+} from "./storage";
 
-const DATA_DIR = path.resolve(process.cwd(), "..", "data");
 const testFiles: string[] = [];
 
-function testPath(name: string): string {
-  const filepath = path.join(DATA_DIR, name);
+function testPath(name: string, baseDir = DATA_DIR): string {
+  const filepath = path.join(baseDir, name);
   testFiles.push(filepath);
   return filepath;
 }
@@ -47,6 +51,22 @@ describe("readDocument", () => {
     const raw = await readDocument(filename);
     expect(JSON.parse(raw)).toEqual(doc);
   });
+
+  it("creates a temp document under /tmp when requested", async () => {
+    const filename = `test-read-temp-${Date.now()}.json`;
+    const filepath = testPath(filename, TEMP_DATA_DIR);
+
+    const raw = await readDocument(filename, { temporary: true });
+    const content = JSON.parse(raw);
+
+    expect(content).toEqual({
+      type: "doc",
+      content: [{ type: "paragraph" }],
+    });
+
+    const onDisk = await fs.readFile(filepath, "utf-8");
+    expect(JSON.parse(onDisk)).toEqual(content);
+  });
 });
 
 describe("writeDocument", () => {
@@ -69,6 +89,20 @@ describe("writeDocument", () => {
     expect(raw).toBe(JSON.stringify(doc, null, 2));
     expect(JSON.parse(raw)).toEqual(doc);
   });
+
+  it("writes to the temp directory when requested", async () => {
+    const filename = `test-write-temp-${Date.now()}.json`;
+    const filepath = testPath(filename, TEMP_DATA_DIR);
+    const doc = {
+      type: "doc",
+      content: [{ type: "paragraph" }],
+    };
+
+    await writeDocument(filename, doc, { temporary: true });
+
+    const raw = await fs.readFile(filepath, "utf-8");
+    expect(JSON.parse(raw)).toEqual(doc);
+  });
 });
 
 describe("path sanitization", () => {
@@ -79,6 +113,22 @@ describe("path sanitization", () => {
     // Attempting traversal should still write inside DATA_DIR
     await writeDocument(`../../etc/${filename}`, { type: "doc", content: [] });
     const raw = await fs.readFile(path.join(DATA_DIR, filename), "utf-8");
+    expect(JSON.parse(raw)).toEqual({ type: "doc", content: [] });
+  });
+
+  it("strips directory traversal for temp storage too", async () => {
+    const filename = `test-safe-temp-${Date.now()}.json`;
+    testPath(filename, TEMP_DATA_DIR);
+
+    await writeDocument(
+      `../../etc/${filename}`,
+      { type: "doc", content: [] },
+      {
+        temporary: true,
+      },
+    );
+
+    const raw = await fs.readFile(path.join(TEMP_DATA_DIR, filename), "utf-8");
     expect(JSON.parse(raw)).toEqual({ type: "doc", content: [] });
   });
 });

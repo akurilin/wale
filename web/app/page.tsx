@@ -1,66 +1,34 @@
-"use client";
+import { redirect } from "next/navigation";
+import { EditorPageClient } from "./editor-page-client";
 
-import { Suspense, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-import { useEditor, EditorContent } from "@tiptap/react";
-import type { Editor } from "@tiptap/core";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import { useDocumentSync } from "@/lib/document/use-document-sync";
-import { Assistant } from "./assistant";
+type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-declare global {
-  interface Window {
-    tiptapEditor?: Editor;
-  }
+function getSingleParam(
+  value: string | string[] | undefined,
+): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
 }
 
-function EditorPage() {
-  const searchParams = useSearchParams();
-  const filename = searchParams.get("doc") ?? "untitled.json";
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: PageSearchParams;
+}) {
+  const params = await searchParams;
+  const file = getSingleParam(params.file);
+  const legacyDoc = getSingleParam(params.doc);
+  const useTempStorage = getSingleParam(params.tmp) === "true";
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-      }),
-      Placeholder.configure({
-        placeholder: "Start writing...",
-      }),
-    ],
-    autofocus: true,
-    immediatelyRender: false,
-  });
+  if (!file) {
+    const redirectParams = new URLSearchParams();
+    redirectParams.set("file", legacyDoc || "default.json");
 
-  useDocumentSync(editor, filename);
-
-  useEffect(() => {
-    if (editor && process.env.NODE_ENV !== "production") {
-      window.tiptapEditor = editor;
+    if (useTempStorage) {
+      redirectParams.set("tmp", "true");
     }
-    return () => {
-      delete window.tiptapEditor;
-    };
-  }, [editor]);
 
-  return (
-    <div className="flex h-screen">
-      <div className="flex-1 overflow-y-auto py-12 px-4 bg-gray-50">
-        <div className="paper">
-          <EditorContent editor={editor} />
-        </div>
-      </div>
-      <div className="w-[400px] border-l border-border">
-        <Assistant />
-      </div>
-    </div>
-  );
-}
+    redirect(`/?${redirectParams.toString()}`);
+  }
 
-export default function Home() {
-  return (
-    <Suspense>
-      <EditorPage />
-    </Suspense>
-  );
+  return <EditorPageClient filename={file} useTempStorage={useTempStorage} />;
 }

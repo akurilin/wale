@@ -3,9 +3,9 @@ import type { JSONContent } from "@tiptap/core";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
+import { TEMP_DATA_DIR } from "../lib/document/storage";
 
 const mod = os.platform() === "darwin" ? "Meta" : "Control";
-const DATA_DIR = path.resolve(__dirname, "..", "..", "data");
 
 async function getEditorJSON(page: Page): Promise<JSONContent | null> {
   return page.evaluate(() => window.tiptapEditor?.getJSON() ?? null);
@@ -32,10 +32,10 @@ test.describe("Document Sync", () => {
 
   test("Cmd+S saves editor content to disk", async ({ page }) => {
     const filename = `test-save-${Date.now()}.json`;
-    const filepath = path.join(DATA_DIR, filename);
+    const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
-    await page.goto(`/?doc=${filename}`);
+    await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
 
     const editor = page.locator(".tiptap");
@@ -53,10 +53,10 @@ test.describe("Document Sync", () => {
 
   test("external file edit is reflected in the editor", async ({ page }) => {
     const filename = `test-reload-${Date.now()}.json`;
-    const filepath = path.join(DATA_DIR, filename);
+    const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
-    await page.goto(`/?doc=${filename}`);
+    await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
 
     const externalContent: JSONContent = {
@@ -78,10 +78,10 @@ test.describe("Document Sync", () => {
 
   test("save does not trigger redundant reload", async ({ page }) => {
     const filename = `test-no-loop-${Date.now()}.json`;
-    const filepath = path.join(DATA_DIR, filename);
+    const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
-    await page.goto(`/?doc=${filename}`);
+    await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
 
     const editor = page.locator(".tiptap");
@@ -109,10 +109,10 @@ test.describe("Document Sync", () => {
 
   test("opening a non-existent file creates it on disk", async ({ page }) => {
     const filename = `test-create-${Date.now()}.json`;
-    const filepath = path.join(DATA_DIR, filename);
+    const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
-    await page.goto(`/?doc=${filename}`);
+    await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
 
     await expect(async () => {
@@ -120,5 +120,17 @@ test.describe("Document Sync", () => {
       const content: JSONContent = JSON.parse(raw);
       expect(content.type).toBe("doc");
     }).toPass({ timeout: 5000 });
+  });
+
+  test("missing file param redirects to the default temp document", async ({
+    page,
+  }) => {
+    const filepath = path.join(TEMP_DATA_DIR, "default.json");
+    filesToCleanup.push(filepath);
+
+    await page.goto("/?tmp=true");
+    await page.waitForURL("**/?file=default.json&tmp=true");
+
+    expect(page.url()).toContain("/?file=default.json&tmp=true");
   });
 });

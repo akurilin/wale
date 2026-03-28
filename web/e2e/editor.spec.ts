@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import type { JSONContent } from "@tiptap/core";
+import fs from "fs/promises";
 import os from "os";
+import path from "path";
+import { TEMP_DATA_DIR } from "../lib/document/storage";
 
 const mod = os.platform() === "darwin" ? "Meta" : "Control";
 const emptyDocument: JSONContent = {
@@ -21,8 +24,22 @@ function getNodeText(node: JSONContent | undefined): string | undefined {
 }
 
 test.describe("TipTap Editor", () => {
+  const filesToCleanup: string[] = [];
+
+  test.afterEach(async () => {
+    for (const filepath of filesToCleanup) {
+      await fs.unlink(filepath).catch(() => {});
+    }
+    filesToCleanup.length = 0;
+  });
+
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    const filename = `editor-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}.json`;
+    filesToCleanup.push(path.join(TEMP_DATA_DIR, filename));
+
+    await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
   });
 

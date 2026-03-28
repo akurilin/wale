@@ -5,7 +5,21 @@ import { useEffect, useRef } from "react";
 
 const POLL_INTERVAL_MS = 1000;
 
-export function useDocumentSync(editor: Editor | null, filename: string): void {
+function getDocumentApiUrl(filename: string, useTempStorage: boolean): string {
+  const searchParams = new URLSearchParams({ file: filename });
+
+  if (useTempStorage) {
+    searchParams.set("tmp", "true");
+  }
+
+  return `/api/document?${searchParams.toString()}`;
+}
+
+export function useDocumentSync(
+  editor: Editor | null,
+  filename: string,
+  useTempStorage: boolean,
+): void {
   const lastFileContentRef = useRef<string | null>(null);
 
   // Initial load
@@ -13,7 +27,7 @@ export function useDocumentSync(editor: Editor | null, filename: string): void {
     if (!editor) return;
 
     let cancelled = false;
-    fetch(`/api/document?file=${encodeURIComponent(filename)}`)
+    fetch(getDocumentApiUrl(filename, useTempStorage))
       .then((res) => {
         if (!res.ok) throw new Error(`GET failed: ${res.status}`);
         return res.text();
@@ -28,7 +42,7 @@ export function useDocumentSync(editor: Editor | null, filename: string): void {
     return () => {
       cancelled = true;
     };
-  }, [editor, filename]);
+  }, [editor, filename, useTempStorage]);
 
   // Cmd+S / Ctrl+S save
   useEffect(() => {
@@ -40,7 +54,7 @@ export function useDocumentSync(editor: Editor | null, filename: string): void {
         const content = editor.getJSON();
         const raw = JSON.stringify(content, null, 2);
         lastFileContentRef.current = raw;
-        fetch(`/api/document?file=${encodeURIComponent(filename)}`, {
+        fetch(getDocumentApiUrl(filename, useTempStorage), {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content }),
@@ -50,7 +64,7 @@ export function useDocumentSync(editor: Editor | null, filename: string): void {
 
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [editor, filename]);
+  }, [editor, filename, useTempStorage]);
 
   // Poll for external changes
   useEffect(() => {
@@ -58,9 +72,7 @@ export function useDocumentSync(editor: Editor | null, filename: string): void {
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(
-          `/api/document?file=${encodeURIComponent(filename)}`,
-        );
+        const res = await fetch(getDocumentApiUrl(filename, useTempStorage));
         if (!res.ok) return;
         const raw = await res.text();
         if (raw !== lastFileContentRef.current) {
@@ -73,5 +85,5 @@ export function useDocumentSync(editor: Editor | null, filename: string): void {
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [editor, filename]);
+  }, [editor, filename, useTempStorage]);
 }

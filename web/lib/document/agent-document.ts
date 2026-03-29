@@ -106,6 +106,122 @@ function getEditableBlocks(document: JSONContent): AssistantDocumentBlock[] {
   });
 }
 
+function commonPrefixLength(a: string, b: string): number {
+  let i = 0;
+  const len = Math.min(a.length, b.length);
+  while (i < len && a[i] === b[i]) i++;
+  return i;
+}
+
+function commonSuffixLength(a: string, b: string, prefixLen: number): number {
+  let i = 0;
+  const maxLen = Math.min(a.length - prefixLen, b.length - prefixLen);
+  while (i < maxLen && a[a.length - 1 - i] === b[b.length - 1 - i]) i++;
+  return i;
+}
+
+function sameMarks(a: JSONContent["marks"], b: JSONContent["marks"]): boolean {
+  if (!a?.length && !b?.length) return true;
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function mergeAdjacentTextNodes(nodes: JSONContent[]): JSONContent[] {
+  const result: JSONContent[] = [];
+  for (const node of nodes) {
+    const prev = result[result.length - 1];
+    if (
+      prev?.type === "text" &&
+      node.type === "text" &&
+      sameMarks(prev.marks, node.marks)
+    ) {
+      prev.text = (prev.text ?? "") + (node.text ?? "");
+    } else {
+      result.push(node);
+    }
+  }
+  return result;
+}
+
+function replaceTextPreservingMarks(
+  content: JSONContent[],
+  oldText: string,
+  newText: string,
+): JSONContent[] {
+  const prefixLen = commonPrefixLength(oldText, newText);
+  const suffixLen = commonSuffixLength(oldText, newText, prefixLen);
+
+  const editStart = prefixLen;
+  const editEndOld = oldText.length - suffixLen;
+  const replacement = newText.slice(prefixLen, newText.length - suffixLen);
+
+  const result: JSONContent[] = [];
+  let pos = 0;
+  let replacementEmitted = false;
+
+  for (const node of content) {
+    if (node.type !== "text") {
+      result.push(node);
+      continue;
+    }
+
+    const text = node.text ?? "";
+    const nodeStart = pos;
+    const nodeEnd = pos + text.length;
+    pos = nodeEnd;
+
+    if (nodeEnd <= editStart) {
+      result.push(node);
+      continue;
+    }
+
+    if (nodeStart >= editEndOld) {
+      if (!replacementEmitted) {
+        if (replacement.length > 0) {
+          result.push({ type: "text", text: replacement } as JSONContent);
+        }
+        replacementEmitted = true;
+      }
+      result.push(node);
+      continue;
+    }
+
+    // Node overlaps the edit region
+
+    if (nodeStart < editStart) {
+      const kept: JSONContent = {
+        type: "text",
+        text: text.slice(0, editStart - nodeStart),
+      };
+      if (node.marks) kept.marks = node.marks;
+      result.push(kept);
+    }
+
+    if (!replacementEmitted) {
+      if (replacement.length > 0) {
+        const rep: JSONContent = { type: "text", text: replacement };
+        if (node.marks) rep.marks = node.marks;
+        result.push(rep);
+      }
+      replacementEmitted = true;
+    }
+
+    if (nodeEnd > editEndOld) {
+      const kept: JSONContent = {
+        type: "text",
+        text: text.slice(editEndOld - nodeStart),
+      };
+      if (node.marks) kept.marks = node.marks;
+      result.push(kept);
+    }
+  }
+
+  if (!replacementEmitted && replacement.length > 0) {
+    result.push({ type: "text", text: replacement } as JSONContent);
+  }
+
+  return mergeAdjacentTextNodes(result);
+}
+
 function replaceTopLevelBlockText(
   document: JSONContent,
   blockId: string,
@@ -121,8 +237,14 @@ function replaceTopLevelBlockText(
     return null;
   }
 
-  block.content =
-    newText.length > 0 ? [{ type: "text", text: newText } as JSONContent] : [];
+  if (newText.length === 0) {
+    block.content = [];
+  } else if (!block.content?.length) {
+    block.content = [{ type: "text", text: newText } as JSONContent];
+  } else {
+    const oldText = getNodeText(block);
+    block.content = replaceTextPreservingMarks(block.content, oldText, newText);
+  }
 
   return {
     id: blockId,

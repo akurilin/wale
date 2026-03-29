@@ -263,6 +263,128 @@ describe("applyDocumentEdits", () => {
     });
   });
 
+  it("preserves inline marks when replacing text in a formatted block", async () => {
+    const filename = `assistant-marks-${Date.now()}.json`;
+    const filepath = registerTempFile(filename);
+    await writeTempDocument(filename, {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "The " },
+            {
+              type: "text",
+              text: "opening",
+              marks: [{ type: "bold" }],
+            },
+            { type: "text", text: " paragraph." },
+          ],
+        },
+      ],
+    });
+
+    const before = await readDocumentForAssistant(filename, {
+      temporary: true,
+    });
+    const result = await applyDocumentEdits(
+      filename,
+      {
+        baseRevision: before.revision,
+        edits: [
+          {
+            blockId: "0",
+            expectedText: "The opening paragraph.",
+            newText: "The beginning paragraph.",
+          },
+        ],
+      },
+      { temporary: true },
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      revision: expect.any(String),
+      updatedBlocks: [
+        {
+          id: "0",
+          type: "paragraph",
+          text: "The beginning paragraph.",
+        },
+      ],
+    });
+
+    const onDisk = JSON.parse(
+      await fs.readFile(filepath, "utf-8"),
+    ) as JSONContent;
+    expect(onDisk.content?.[0].content).toEqual([
+      { type: "text", text: "The " },
+      { type: "text", text: "beginning", marks: [{ type: "bold" }] },
+      { type: "text", text: " paragraph." },
+    ]);
+  });
+
+  it("preserves marks on untouched regions when editing plain text nearby", async () => {
+    const filename = `assistant-marks-nearby-${Date.now()}.json`;
+    const filepath = registerTempFile(filename);
+    await writeTempDocument(filename, {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "The " },
+            {
+              type: "text",
+              text: "bold",
+              marks: [{ type: "bold" }],
+            },
+            { type: "text", text: " paragraph." },
+          ],
+        },
+      ],
+    });
+
+    const before = await readDocumentForAssistant(filename, {
+      temporary: true,
+    });
+    const result = await applyDocumentEdits(
+      filename,
+      {
+        baseRevision: before.revision,
+        edits: [
+          {
+            blockId: "0",
+            expectedText: "The bold paragraph.",
+            newText: "The bold sentence.",
+          },
+        ],
+      },
+      { temporary: true },
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      revision: expect.any(String),
+      updatedBlocks: [
+        {
+          id: "0",
+          type: "paragraph",
+          text: "The bold sentence.",
+        },
+      ],
+    });
+
+    const onDisk = JSON.parse(
+      await fs.readFile(filepath, "utf-8"),
+    ) as JSONContent;
+    expect(onDisk.content?.[0].content).toEqual([
+      { type: "text", text: "The " },
+      { type: "text", text: "bold", marks: [{ type: "bold" }] },
+      { type: "text", text: " sentence." },
+    ]);
+  });
+
   it("validates all edits before writing so partial updates never reach disk", async () => {
     const filename = `assistant-atomic-${Date.now()}.json`;
     const filepath = registerTempFile(filename);

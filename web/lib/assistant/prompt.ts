@@ -12,12 +12,27 @@ const buildBaseChatPrompt = () =>
 
 const buildChatContextPrompt = (
   documentContext: AssistantDocumentContext | undefined,
+  hasDocumentTools: boolean,
 ) => {
-  if (!documentContext) {
-    return buildBaseChatPrompt();
+  const sections = [buildBaseChatPrompt()];
+
+  if (hasDocumentTools) {
+    sections.push(
+      [
+        "The current document is available through tools.",
+        "Use read_document to inspect the canonical document before making document-specific claims.",
+        "Use apply_document_edits to modify the document.",
+        "Do not claim an edit was made unless apply_document_edits returned ok: true.",
+        "When editing, copy the exact expectedText from read_document so conflicts are detected cleanly.",
+      ].join(" "),
+    );
   }
 
-  const sections = [buildBaseChatPrompt(), "Document context:"];
+  if (!documentContext) {
+    return sections.join("\n\n");
+  }
+
+  sections.push("Document context:");
 
   if (documentContext.selectionText) {
     sections.push(`Current selection:\n${documentContext.selectionText}`);
@@ -32,13 +47,15 @@ const buildChatContextPrompt = (
 
 export function buildSystemPrompt({
   mode,
+  hasDocumentTools,
   documentContext,
 }: {
   mode: AssistantMode;
+  hasDocumentTools: boolean;
   documentContext?: AssistantDocumentContext;
 }) {
   switch (mode) {
     case "chat":
-      return buildChatContextPrompt(documentContext);
+      return buildChatContextPrompt(documentContext, hasDocumentTools);
   }
 }

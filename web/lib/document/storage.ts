@@ -9,7 +9,7 @@ const EMPTY_DOCUMENT = {
   content: [{ type: "paragraph" as const }],
 };
 
-type DocumentStorageOptions = {
+export type DocumentStorageOptions = {
   temporary?: boolean;
 };
 

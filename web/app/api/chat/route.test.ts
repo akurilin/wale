@@ -57,6 +57,10 @@ describe("POST /api/chat", () => {
         },
         body: JSON.stringify({
           messages: [validMessage],
+          document: {
+            filename: "draft.json",
+            temporary: true,
+          },
           system: "client owned prompt should be ignored",
         }),
       }),
@@ -66,6 +70,10 @@ describe("POST /api/chat", () => {
     await expect(response.text()).resolves.toBe("streamed-response");
     expect(runAssistantMock).toHaveBeenCalledWith({
       mode: "chat",
+      document: {
+        filename: "draft.json",
+        temporary: true,
+      },
       messages: [validMessage],
     });
   });

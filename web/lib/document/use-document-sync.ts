@@ -2,18 +2,9 @@
 
 import type { Editor } from "@tiptap/react";
 import { useEffect, useRef } from "react";
+import { getDocumentApiUrl, saveDocumentToApi } from "./api";
 
 const POLL_INTERVAL_MS = 1000;
-
-function getDocumentApiUrl(filename: string, useTempStorage: boolean): string {
-  const searchParams = new URLSearchParams({ file: filename });
-
-  if (useTempStorage) {
-    searchParams.set("tmp", "true");
-  }
-
-  return `/api/document?${searchParams.toString()}`;
-}
 
 export function useDocumentSync(
   editor: Editor | null,
@@ -27,6 +18,7 @@ export function useDocumentSync(
     if (!editor) return;
 
     let cancelled = false;
+    lastFileContentRef.current = null;
     fetch(getDocumentApiUrl(filename, useTempStorage))
       .then((res) => {
         if (!res.ok) throw new Error(`GET failed: ${res.status}`);
@@ -34,6 +26,7 @@ export function useDocumentSync(
       })
       .then((raw) => {
         if (cancelled) return;
+        if (lastFileContentRef.current !== null) return;
         lastFileContentRef.current = raw;
         editor.commands.setContent(JSON.parse(raw));
       })
@@ -54,11 +47,9 @@ export function useDocumentSync(
         const content = editor.getJSON();
         const raw = JSON.stringify(content, null, 2);
         lastFileContentRef.current = raw;
-        fetch(getDocumentApiUrl(filename, useTempStorage), {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
-        }).catch((err) => console.error("Document save failed:", err));
+        saveDocumentToApi(filename, useTempStorage, content).catch((err) =>
+          console.error("Document save failed:", err),
+        );
       }
     };
 

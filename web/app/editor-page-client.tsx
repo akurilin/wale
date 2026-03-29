@@ -53,7 +53,11 @@ export function EditorPageClient({
         </div>
       </div>
       <div className="w-[400px] border-l border-border">
-        <Assistant />
+        <Assistant
+          editor={editor}
+          filename={filename}
+          useTempStorage={useTempStorage}
+        />
       </div>
     </div>
   );

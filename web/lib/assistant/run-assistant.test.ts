@@ -38,6 +38,10 @@ const validRequest: AssistantRequest = {
       parts: [{ type: "text", text: "Help me rewrite this paragraph." }],
     },
   ],
+  document: {
+    filename: "draft.json",
+    temporary: true,
+  },
   documentContext: {
     selectionText: "This paragraph needs work.",
     excerpt:
@@ -73,12 +77,24 @@ describe("runAssistant", () => {
         model: mockModel,
         messages: convertedMessages,
         system: expect.stringContaining("This paragraph needs work."),
+        tools: expect.objectContaining({
+          read_document: expect.any(Object),
+          apply_document_edits: expect.any(Object),
+        }),
+        stopWhen: expect.any(Function),
       }),
     );
     expect(streamTextMock).toHaveBeenCalledWith(
       expect.objectContaining({
         system: expect.stringContaining(
           "The rest of the draft is about rituals.",
+        ),
+      }),
+    );
+    expect(streamTextMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system: expect.stringContaining(
+          "The current document is available through tools.",
         ),
       }),
     );

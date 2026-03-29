@@ -3,6 +3,11 @@ import { z } from "zod";
 
 const invalidAssistantRequestMessage = "Invalid assistant request payload.";
 
+const documentHandleSchema = z.object({
+  filename: z.string().trim().min(1),
+  temporary: z.boolean().default(false),
+});
+
 // The assistant request can carry focused editor context in addition to chat history.
 // Expand this object as we add more client-side wiring, and keep app/assistant.tsx
 // aligned so the UI keeps sending the fields the backend already understands.
@@ -21,12 +26,16 @@ const documentContextSchema = z
 const assistantRequestSchema = z.object({
   mode: z.literal("chat").default("chat"),
   messages: z.unknown(),
+  document: documentHandleSchema.optional(),
   documentContext: documentContextSchema.optional(),
 });
 
 type AssistantRequestSchema = z.output<typeof assistantRequestSchema>;
 
 export type AssistantMode = AssistantRequestSchema["mode"];
+export type AssistantDocumentHandle = NonNullable<
+  AssistantRequestSchema["document"]
+>;
 export type AssistantDocumentContext = NonNullable<
   AssistantRequestSchema["documentContext"]
 >;

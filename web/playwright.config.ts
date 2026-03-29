@@ -52,7 +52,7 @@ export default defineConfig({
     ],
   ],
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:3100",
     trace: "on-first-retry",
   },
   projects: [
@@ -62,9 +62,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    command:
+      "NEXT_DIST_DIR=.next-playwright PORT=3100 WALE_ASSISTANT_MODEL=mock-document-edit ./scripts/with-node.sh npm run dev",
+    url: "http://localhost:3100",
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

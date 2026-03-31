@@ -6,6 +6,12 @@ import { getDocumentApiUrl, saveDocumentToApi } from "./api";
 
 const POLL_INTERVAL_MS = 1000;
 
+/**
+ * Keeps the browser editor synchronized with the file-backed document source.
+ * The hook is responsible for the initial load, manual save shortcuts, and a
+ * lightweight polling loop so assistant edits and other external writes show up
+ * without a page refresh.
+ */
 export function useDocumentSync(
   editor: Editor | null,
   filename: string,

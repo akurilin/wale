@@ -21,6 +21,10 @@ import {
 } from "lucide-react";
 import type { FC } from "react";
 
+/**
+ * Composes the assistant conversation viewport, welcome state, and composer
+ * into one cohesive sidebar UI.
+ */
 export const Thread: FC = () => {
   return (
     <ThreadPrimitive.Root
@@ -56,6 +60,10 @@ export const Thread: FC = () => {
   );
 };
 
+/**
+ * Gives the user a quick way to jump back to the latest assistant output when
+ * the conversation has scrolled upward.
+ */
 const ThreadScrollToBottom: FC = () => {
   return (
     <ThreadPrimitive.ScrollToBottom className="absolute -top-12 z-10 self-center rounded-full border bg-background p-2 shadow-sm hover:bg-accent disabled:invisible">
@@ -64,6 +72,9 @@ const ThreadScrollToBottom: FC = () => {
   );
 };
 
+/**
+ * Empty-state copy shown before the thread has any messages.
+ */
 const ThreadWelcome: FC = () => {
   return (
     <div className="aui-thread-welcome-root mx-auto my-auto flex w-full max-w-(--thread-max-width) grow flex-col">
@@ -79,6 +90,10 @@ const ThreadWelcome: FC = () => {
   );
 };
 
+/**
+ * Wraps the assistant-ui composer with the local visual styling used in the
+ * sidebar.
+ */
 const Composer: FC = () => {
   return (
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
@@ -96,6 +111,10 @@ const Composer: FC = () => {
   );
 };
 
+/**
+ * Swaps the composer action between send and cancel depending on whether the
+ * assistant is currently streaming.
+ */
 const ComposerAction: FC = () => {
   return (
     <div className="aui-composer-action-wrapper relative flex items-center justify-end">
@@ -119,6 +138,9 @@ const ComposerAction: FC = () => {
   );
 };
 
+/**
+ * Renders request-level assistant errors inline with the affected message.
+ */
 const MessageError: FC = () => {
   return (
     <MessagePrimitive.Error>
@@ -129,6 +151,10 @@ const MessageError: FC = () => {
   );
 };
 
+/**
+ * Defines the presentation of assistant-authored messages, including markdown
+ * rendering and per-message controls.
+ */
 const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root
@@ -152,6 +178,10 @@ const AssistantMessage: FC = () => {
   );
 };
 
+/**
+ * Exposes lightweight assistant message actions without adding another custom
+ * state layer on top of assistant-ui's primitives.
+ */
 const AssistantActionBar: FC = () => {
   return (
     <ActionBarPrimitive.Root
@@ -174,6 +204,9 @@ const AssistantActionBar: FC = () => {
   );
 };
 
+/**
+ * Defines the layout for user-authored messages in the thread.
+ */
 const UserMessage: FC = () => {
   return (
     <MessagePrimitive.Root
@@ -191,6 +224,10 @@ const UserMessage: FC = () => {
   );
 };
 
+/**
+ * Renders the inline message editor used when assistant-ui allows editing a
+ * previously sent user message.
+ */
 const EditComposer: FC = () => {
   return (
     <MessagePrimitive.Root className="aui-edit-composer-wrapper mx-auto flex w-full max-w-(--thread-max-width) flex-col px-2 py-3">
@@ -212,6 +249,10 @@ const EditComposer: FC = () => {
   );
 };
 
+/**
+ * Lets the user step through alternate branches for a single message when the
+ * assistant runtime exposes regenerations.
+ */
 const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
   className,
   ...rest

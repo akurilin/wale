@@ -43,6 +43,10 @@ export type AssistantRequest = Omit<AssistantRequestSchema, "messages"> & {
   messages: UIMessage[];
 };
 
+/**
+ * Normalizes validation failures behind one stable error type so the API route
+ * can turn bad client payloads into a predictable 400 response.
+ */
 export class AssistantRequestError extends Error {
   constructor(cause?: unknown) {
     super(invalidAssistantRequestMessage, {
@@ -52,6 +56,12 @@ export class AssistantRequestError extends Error {
   }
 }
 
+/**
+ * Parses the raw chat request and upgrades UI messages through the AI SDK's
+ * validator before the assistant runtime sees them.
+ * This is intentionally two-stage validation: Zod handles our request shape,
+ * then `validateUIMessages` enforces the SDK-specific message contract.
+ */
 export async function parseAssistantRequest(
   input: unknown,
 ): Promise<AssistantRequest> {

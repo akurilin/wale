@@ -13,12 +13,21 @@ export type DocumentStorageOptions = {
   temporary?: boolean;
 };
 
+/**
+ * Chooses between the checked-in data directory and the temporary scratch
+ * directory used during local development and tests.
+ */
 function getDocumentDirectory({
   temporary = false,
 }: DocumentStorageOptions): string {
   return temporary ? TEMP_DATA_DIR : DATA_DIR;
 }
 
+/**
+ * Resolves a user-supplied filename to a safe on-disk path.
+ * We intentionally strip directory segments with `basename` because document
+ * handles come from URLs and should never escape the storage root.
+ */
 function resolveDocPath(
   filename: string,
   options: DocumentStorageOptions = {},
@@ -28,6 +37,11 @@ function resolveDocPath(
   return path.join(getDocumentDirectory(options), safe);
 }
 
+/**
+ * Reads a document from storage and lazily creates an empty TipTap document
+ * when the file does not exist yet. This keeps the rest of the app free from a
+ * separate "create document first" bootstrap path.
+ */
 export async function readDocument(
   filename: string,
   options: DocumentStorageOptions = {},
@@ -48,6 +62,10 @@ export async function readDocument(
   }
 }
 
+/**
+ * Serializes a TipTap JSON document to disk using the same pretty-printed shape
+ * that the read path and revision hashing logic expect.
+ */
 export async function writeDocument(
   filename: string,
   content: unknown,

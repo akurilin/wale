@@ -5,6 +5,10 @@ import type {
 import { simulateReadableStream } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 
+/**
+ * Builds the minimal token accounting payload the mock streaming responses need
+ * in order to resemble real AI SDK responses.
+ */
 function createUsage() {
   return {
     inputTokens: {
@@ -21,6 +25,10 @@ function createUsage() {
   };
 }
 
+/**
+ * Simulates a model step that decides to call a tool and then stops so the
+ * outer assistant loop can execute that tool result.
+ */
 function createToolStep(toolCallId: string, toolName: string, input: unknown) {
   return {
     stream: simulateReadableStream({
@@ -41,6 +49,9 @@ function createToolStep(toolCallId: string, toolName: string, input: unknown) {
   };
 }
 
+/**
+ * Simulates the final text response after the mock tool flow completes.
+ */
 function createTextStep(text: string) {
   return {
     stream: simulateReadableStream({
@@ -58,6 +69,11 @@ function createTextStep(text: string) {
   };
 }
 
+/**
+ * Extracts the latest user-authored text from the prompt transcript.
+ * The mock model only needs a tiny slice of the conversation so the tests can
+ * steer what rewrite should be requested.
+ */
 function getLastUserText(prompt: LanguageModelV3Prompt): string {
   const userMessages = prompt.filter(
     (message): message is Extract<(typeof prompt)[number], { role: "user" }> =>
@@ -75,6 +91,11 @@ function getLastUserText(prompt: LanguageModelV3Prompt): string {
     .join("\n");
 }
 
+/**
+ * Scans backwards through the prompt to find the most recent result for a
+ * specific tool call. That mirrors how the real model would see tool outputs in
+ * later reasoning steps.
+ */
 function getToolResult<T>(
   prompt: LanguageModelV3Prompt,
   toolName: string,
@@ -104,6 +125,11 @@ function getToolResult<T>(
   return undefined;
 }
 
+/**
+ * Pulls a requested replacement phrase out of the latest user message using a
+ * couple of lightweight patterns. The heuristic stays intentionally tiny
+ * because its job is only to keep tests readable, not to be clever.
+ */
 function extractRequestedRewrite(userText: string): string {
   const exactRewriteMatch = userText.match(/says exactly:\s*(.+)$/i);
   if (exactRewriteMatch) {
@@ -123,6 +149,11 @@ type ReadDocumentResult = {
   blocks: Array<{ id: string; type: string; text: string }>;
 };
 
+/**
+ * Creates a deterministic assistant model for unit tests.
+ * The mock always follows the same read -> apply edits -> confirm flow so the
+ * surrounding tool wiring can be tested without a live model backend.
+ */
 export function createMockAssistantModel() {
   return new MockLanguageModelV3({
     provider: "mock",

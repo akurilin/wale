@@ -35,6 +35,12 @@ export type ToolFallbackRootProps = Omit<
   defaultOpen?: boolean;
 };
 
+/**
+ * Provides the collapsible shell for a rendered tool call entry.
+ * The controlled/uncontrolled split keeps this reusable if the app later wants
+ * to manage open state externally, while `useScrollLock` avoids jarring layout
+ * jumps during the closing animation.
+ */
 function ToolFallbackRoot({
   className,
   open: controlledOpen,
@@ -87,6 +93,8 @@ function ToolFallbackRoot({
 
 type ToolStatus = ToolCallMessagePartStatus["type"];
 
+// Maps tool lifecycle states to a recognizable icon so the fallback UI reads
+// well even without custom per-tool renderers.
 const statusIconMap: Record<ToolStatus, React.ElementType> = {
   running: LoaderIcon,
   complete: CheckIcon,
@@ -94,6 +102,9 @@ const statusIconMap: Record<ToolStatus, React.ElementType> = {
   "requires-action": AlertCircleIcon,
 };
 
+/**
+ * Shows the tool name and current status in the collapsible trigger row.
+ */
 function ToolFallbackTrigger({
   toolName,
   status,
@@ -161,6 +172,10 @@ function ToolFallbackTrigger({
   );
 }
 
+/**
+ * Wraps the expandable tool details panel and applies the shared open/close
+ * animation classes.
+ */
 function ToolFallbackContent({
   className,
   children,
@@ -187,6 +202,9 @@ function ToolFallbackContent({
   );
 }
 
+/**
+ * Displays the serialized tool arguments when they are available.
+ */
 function ToolFallbackArgs({
   argsText,
   className,
@@ -209,6 +227,9 @@ function ToolFallbackArgs({
   );
 }
 
+/**
+ * Displays the tool result payload for completed tool calls.
+ */
 function ToolFallbackResult({
   result,
   className,
@@ -235,6 +256,10 @@ function ToolFallbackResult({
   );
 }
 
+/**
+ * Surfaces tool execution errors or cancellation reasons inside the expanded
+ * panel.
+ */
 function ToolFallbackError({
   status,
   className,
@@ -272,6 +297,10 @@ function ToolFallbackError({
   );
 }
 
+/**
+ * Default renderer used when the app has not defined a specialized UI for a
+ * given tool call message part.
+ */
 const ToolFallbackImpl: ToolCallMessagePartComponent = ({
   toolName,
   argsText,

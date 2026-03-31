@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description: "A web-based document editor",
 };
 
+/**
+ * Provides the global document structure, fonts, and shared UI providers used
+ * across the app.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

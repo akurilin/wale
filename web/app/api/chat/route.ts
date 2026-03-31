@@ -4,6 +4,11 @@ import {
   parseAssistantRequest,
 } from "@/lib/assistant/types";
 
+/**
+ * Validates a chat request and forwards it into the assistant streaming
+ * runtime. Client payload problems are mapped to 400s so only true server-side
+ * failures bubble up as unhandled errors.
+ */
 export async function POST(req: Request) {
   try {
     const request = await parseAssistantRequest(await req.json());

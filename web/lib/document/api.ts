@@ -1,3 +1,8 @@
+/**
+ * Builds the canonical document API URL used by the editor and assistant.
+ * The `tmp` flag is only present for temporary storage so the stable URL shape
+ * stays short for the normal path.
+ */
 export function getDocumentApiUrl(
   filename: string,
   useTempStorage: boolean,
@@ -11,6 +16,11 @@ export function getDocumentApiUrl(
   return `/api/document?${searchParams.toString()}`;
 }
 
+/**
+ * Persists the current editor document through the API route instead of writing
+ * to storage directly from the client. The wrapper keeps the fetch details in
+ * one place so the rest of the editor only deals with document handles.
+ */
 export async function saveDocumentToApi(
   filename: string,
   useTempStorage: boolean,

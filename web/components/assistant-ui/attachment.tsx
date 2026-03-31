@@ -34,6 +34,11 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
+/**
+ * Creates a revocable object URL for a locally attached file preview.
+ * The cleanup matters because attachment previews can be created repeatedly as
+ * the composer state changes.
+ */
 const useFileSrc = (file: File | undefined) => {
   const src = useMemo(
     () => (file ? URL.createObjectURL(file) : undefined),
@@ -51,6 +56,11 @@ const useFileSrc = (file: File | undefined) => {
   return src;
 };
 
+/**
+ * Resolves the current attachment preview source from assistant-ui state.
+ * Image attachments may come from a local `File` or an already uploaded URL, so
+ * this hook normalizes both cases for the preview components.
+ */
 const useAttachmentSrc = () => {
   const { file, src } = useAuiState(
     useShallow((s): { file?: File; src?: string } => {
@@ -70,6 +80,10 @@ type AttachmentPreviewProps = {
   src: string;
 };
 
+/**
+ * Renders the large image preview inside the dialog and delays visibility until
+ * the image has finished loading to avoid a flash of partially sized content.
+ */
 const AttachmentPreview: FC<AttachmentPreviewProps> = ({ src }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   return (
@@ -89,6 +103,10 @@ const AttachmentPreview: FC<AttachmentPreviewProps> = ({ src }) => {
   );
 };
 
+/**
+ * Wraps attachment content in a dialog only when there is an image preview to
+ * show. Non-image attachments fall through unchanged.
+ */
 const AttachmentPreviewDialog: FC<PropsWithChildren> = ({ children }) => {
   const src = useAttachmentSrc();
 
@@ -111,6 +129,9 @@ const AttachmentPreviewDialog: FC<PropsWithChildren> = ({ children }) => {
   );
 };
 
+/**
+ * Small square attachment thumbnail used in both message and composer contexts.
+ */
 const AttachmentThumb: FC = () => {
   const isImage = useAuiState((s) => s.attachment.type === "image");
   const src = useAttachmentSrc();
@@ -129,6 +150,9 @@ const AttachmentThumb: FC = () => {
   );
 };
 
+/**
+ * Shared attachment tile renderer for assistant-ui's attachment primitives.
+ */
 const AttachmentUI: FC = () => {
   const aui = useAui();
   const isComposer = aui.attachment.source !== "message";
@@ -174,6 +198,9 @@ const AttachmentUI: FC = () => {
   );
 };
 
+/**
+ * Close affordance shown on composer-owned attachments.
+ */
 const AttachmentRemove: FC = () => {
   return (
     <AttachmentPrimitive.Remove className="aui-attachment-tile-remove absolute top-1.5 right-1.5 size-3.5 rounded-full bg-white text-muted-foreground opacity-100 shadow-sm hover:bg-white [&_svg]:text-black hover:[&_svg]:text-destructive">
@@ -182,6 +209,9 @@ const AttachmentRemove: FC = () => {
   );
 };
 
+/**
+ * Message-level attachment row for user-authored messages.
+ */
 export const UserMessageAttachments: FC = () => {
   return (
     <div className="aui-user-message-attachments-end col-span-full col-start-1 row-start-1 flex w-full flex-row justify-end gap-2">
@@ -190,6 +220,9 @@ export const UserMessageAttachments: FC = () => {
   );
 };
 
+/**
+ * Composer-level attachment strip shown while the user is drafting a message.
+ */
 export const ComposerAttachments: FC = () => {
   return (
     <div className="aui-composer-attachments flex w-full flex-row items-center gap-2 overflow-x-auto empty:hidden">
@@ -200,6 +233,9 @@ export const ComposerAttachments: FC = () => {
   );
 };
 
+/**
+ * Entry point for opening the file picker from the composer UI.
+ */
 export const ComposerAddAttachment: FC = () => {
   return (
     <ComposerPrimitive.AddAttachment

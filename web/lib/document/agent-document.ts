@@ -40,14 +40,28 @@ export type ApplyDocumentEditsResult =
       conflict: string;
     };
 
+/**
+ * Produces the optimistic concurrency token for the raw on-disk document.
+ * We hash the serialized JSON rather than the parsed tree so any write that
+ * changes the file contents invalidates stale assistant edits.
+ */
 function getRevision(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
 }
 
+/**
+ * Parses the stored TipTap JSON document into the structure the assistant
+ * editing helpers operate on.
+ */
 function parseDocument(raw: string): JSONContent {
   return JSON.parse(raw) as JSONContent;
 }
 
+/**
+ * Flattens a node subtree into plain text for assistant-facing comparisons.
+ * The assistant currently edits text content only, so marks and nested inline
+ * structure are intentionally ignored at this layer.
+ */
 function getNodeText(node: JSONContent | undefined): string {
   if (!node) {
     return "";
@@ -62,12 +76,22 @@ function getNodeText(node: JSONContent | undefined): string {
   return text;
 }
 
+/**
+ * Narrows the editable surface area to top-level headings and paragraphs.
+ * Other node types still exist in the document, but the current tool contract
+ * keeps assistant edits constrained until richer structural operations exist.
+ */
 function isEditableTopLevelBlock(
   node: JSONContent | undefined,
 ): node is JSONContent & { type: "heading" | "paragraph" } {
   return node?.type === "heading" || node?.type === "paragraph";
 }
 
+/**
+ * Resolves a single assistant block reference back to the live document.
+ * Block ids are currently stringified top-level array indexes, so malformed or
+ * shifted ids must be rejected before any edit work begins.
+ */
 function getEditableBlock(
   document: JSONContent,
   blockId: string,
@@ -90,6 +114,10 @@ function getEditableBlock(
   };
 }
 
+/**
+ * Projects the editable top-level document blocks into the simplified shape
+ * exposed to the assistant tools.
+ */
 function getEditableBlocks(document: JSONContent): AssistantDocumentBlock[] {
   return (document.content ?? []).flatMap((block, index) => {
     if (!isEditableTopLevelBlock(block)) {
@@ -106,6 +134,10 @@ function getEditableBlocks(document: JSONContent): AssistantDocumentBlock[] {
   });
 }
 
+/**
+ * Finds the shared prefix between the old and new block text so the edit logic
+ * can isolate the smallest changed span.
+ */
 function commonPrefixLength(a: string, b: string): number {
   let i = 0;
   const len = Math.min(a.length, b.length);
@@ -113,6 +145,11 @@ function commonPrefixLength(a: string, b: string): number {
   return i;
 }
 
+/**
+ * Finds the shared suffix after the prefix has been accounted for.
+ * The prefix length matters so overlapping prefix/suffix matches do not cause
+ * the replacement window to collapse incorrectly.
+ */
 function commonSuffixLength(a: string, b: string, prefixLen: number): number {
   let i = 0;
   const maxLen = Math.min(a.length - prefixLen, b.length - prefixLen);
@@ -120,11 +157,20 @@ function commonSuffixLength(a: string, b: string, prefixLen: number): number {
   return i;
 }
 
+/**
+ * Compares mark arrays by value so adjacent text nodes are only merged when
+ * they carry the same inline formatting.
+ */
 function sameMarks(a: JSONContent["marks"], b: JSONContent["marks"]): boolean {
   if (!a?.length && !b?.length) return true;
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+/**
+ * Recombines neighboring text nodes after an edit.
+ * TipTap allows adjacent text nodes with identical marks, but merging them here
+ * keeps the stored document shape stable and easier to reason about.
+ */
 function mergeAdjacentTextNodes(nodes: JSONContent[]): JSONContent[] {
   const result: JSONContent[] = [];
   for (const node of nodes) {
@@ -142,6 +188,11 @@ function mergeAdjacentTextNodes(nodes: JSONContent[]): JSONContent[] {
   return result;
 }
 
+/**
+ * Rewrites a block's text while preserving as much inline mark structure as the
+ * old and new strings allow. The algorithm replaces only the differing span and
+ * borrows marks from the overlapping nodes around that span.
+ */
 function replaceTextPreservingMarks(
   content: JSONContent[],
   oldText: string,
@@ -222,6 +273,11 @@ function replaceTextPreservingMarks(
   return mergeAdjacentTextNodes(result);
 }
 
+/**
+ * Applies a plain-text replacement to one editable top-level block.
+ * Empty blocks stay valid by clearing their content array, while populated
+ * blocks route through the mark-preserving replacement helper above.
+ */
 function replaceTopLevelBlockText(
   document: JSONContent,
   blockId: string,
@@ -253,6 +309,10 @@ function replaceTopLevelBlockText(
   };
 }
 
+/**
+ * Exposes the assistant-safe document view: a revision token plus the editable
+ * block list. This is the read side of the assistant tool contract.
+ */
 export async function readDocumentForAssistant(
   filename: string,
   options: DocumentStorageOptions = {},
@@ -266,6 +326,11 @@ export async function readDocumentForAssistant(
   };
 }
 
+/**
+ * Applies a batch of assistant edits atomically against a specific base
+ * revision. Every edit is validated against the current document first so we do
+ * not partially apply a stale or mismatched batch.
+ */
 export async function applyDocumentEdits(
   filename: string,
   input: ApplyDocumentEditsInput,

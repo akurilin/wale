@@ -1,6 +1,11 @@
 import { readDocument, writeDocument } from "@/lib/document/storage";
 import { type NextRequest, NextResponse } from "next/server";
 
+/**
+ * Returns the raw TipTap JSON document for the requested file handle.
+ * The editor reads this directly so the response intentionally stays close to
+ * the on-disk representation instead of wrapping it in extra API metadata.
+ */
 export async function GET(req: NextRequest) {
   const file = req.nextUrl.searchParams.get("file");
   const useTempStorage = req.nextUrl.searchParams.get("tmp") === "true";
@@ -21,6 +26,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Persists a full document snapshot from the client.
+ * The write path is intentionally simple today: the caller sends the whole
+ * TipTap JSON tree and storage replaces the previous file contents.
+ */
 export async function PUT(req: NextRequest) {
   const file = req.nextUrl.searchParams.get("file");
   const useTempStorage = req.nextUrl.searchParams.get("tmp") === "true";

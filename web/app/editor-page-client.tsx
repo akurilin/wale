@@ -14,6 +14,11 @@ declare global {
   }
 }
 
+/**
+ * Client-side shell for the writing experience.
+ * It owns the TipTap instance, wires document synchronization, and renders the
+ * editor and assistant side by side around the same live editor state.
+ */
 export function EditorPageClient({
   filename,
   useTempStorage,

@@ -6,16 +6,25 @@
 
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 
+/**
+ * Root collapsible wrapper kept for the scaffolded assistant tool UI.
+ */
 function Collapsible({ ...props }: CollapsiblePrimitive.Root.Props) {
   return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
 }
 
+/**
+ * Trigger wrapper paired with the shared collapsible root above.
+ */
 function CollapsibleTrigger({ ...props }: CollapsiblePrimitive.Trigger.Props) {
   return (
     <CollapsiblePrimitive.Trigger data-slot="collapsible-trigger" {...props} />
   );
 }
 
+/**
+ * Content panel wrapper paired with the shared collapsible root above.
+ */
 function CollapsibleContent({ ...props }: CollapsiblePrimitive.Panel.Props) {
   return (
     <CollapsiblePrimitive.Panel data-slot="collapsible-content" {...props} />

@@ -4,6 +4,11 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Global tooltip provider used at the app root.
+ * The zero-delay default keeps small icon affordances responsive in the editor
+ * and assistant sidebars.
+ */
 function TooltipProvider({
   delay = 0,
   ...props
@@ -17,14 +22,26 @@ function TooltipProvider({
   );
 }
 
+/**
+ * Thin wrapper around the Base UI tooltip root so local components can use a
+ * consistent import surface.
+ */
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 }
 
+/**
+ * Forwards trigger props while preserving the shared `data-slot` markers used
+ * by styling and debugging tools.
+ */
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
+/**
+ * Renders the tooltip popup with the shared positioning and animation defaults
+ * used throughout the app.
+ */
 function TooltipContent({
   className,
   side = "top",

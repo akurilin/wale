@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-`AGENTS.md` is a symlink to this file, so both paths provide the same repository instructions.
+`AGENTS.md` is a symlink to this file, so both paths provide the same repository instructions. Update this file only; the symlink keeps `AGENTS.md` in sync automatically.
 
 ## Project Overview
 
@@ -79,6 +79,12 @@ supabase stop    # Stop local Supabase stack
 - **CSS**: Tailwind 4 with `@import "tailwindcss"` syntax. TipTap editor styles are in `web/app/globals.css`
 - **ESLint**: Flat config (`eslint.config.mjs`) using `eslint-config-next` core-web-vitals + TypeScript presets + `eslint-config-prettier`
 - **Formatting**: Prettier (config in `web/.prettierrc`)
+
+## Source Documentation
+
+- Add a concise comment above developer-facing functions and components in source modules (tests excluded).
+- Each comment should explain what the function does, why it exists in Wale, and any non-obvious quirks or assumptions a reader would otherwise have to reverse-engineer.
+- Prefer comments that help someone understand behavior and boundaries quickly; avoid boilerplate comments that only restate the code.
 
 ## Manual QA
 

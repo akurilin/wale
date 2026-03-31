@@ -1,6 +1,10 @@
 import { modelConfig } from "./model";
 import type { AssistantDocumentContext, AssistantMode } from "./types";
 
+/**
+ * Builds the shared assistant identity and operating constraints used for every
+ * chat request.
+ */
 const buildBaseChatPrompt = () =>
   [
     "You are Wale, an AI writing assistant embedded in a document editor.",
@@ -10,6 +14,10 @@ const buildBaseChatPrompt = () =>
     "Use the provided document context when it is relevant, and say when context is missing instead of inventing it.",
   ].join(" ");
 
+/**
+ * Adds document-specific instructions and any focused editor context to the
+ * base prompt. This keeps the tool guidance close to the context it depends on.
+ */
 const buildChatContextPrompt = (
   documentContext: AssistantDocumentContext | undefined,
   hasDocumentTools: boolean,
@@ -45,6 +53,11 @@ const buildChatContextPrompt = (
   return sections.join("\n\n");
 };
 
+/**
+ * Selects the prompt builder for the current assistant mode.
+ * There is only one mode today, but the switch keeps future mode-specific
+ * prompt logic from leaking into the route or runtime setup.
+ */
 export function buildSystemPrompt({
   mode,
   hasDocumentTools,

@@ -21,6 +21,11 @@ const applyDocumentEditsInputSchema = z.object({
     .min(1),
 });
 
+/**
+ * Builds the per-document tool bundle exposed to the model.
+ * The tools close over the current document handle so the assistant runtime
+ * does not need to thread filenames through each tool invocation manually.
+ */
 export function buildDocumentTools(document: AssistantDocumentHandle) {
   return {
     read_document: tool({

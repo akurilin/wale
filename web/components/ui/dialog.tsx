@@ -11,22 +11,38 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
 
+/**
+ * Root dialog wrapper kept for the scaffolded attachment preview UI.
+ */
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
+/**
+ * Trigger wrapper paired with the shared dialog root above.
+ */
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
+/**
+ * Portal wrapper so dialog content always renders outside local stacking
+ * contexts.
+ */
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
+/**
+ * Close wrapper exposed for completeness alongside the other dialog primitives.
+ */
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
+/**
+ * Shared backdrop styling for modal dialogs.
+ */
 function DialogOverlay({
   className,
   ...props
@@ -43,6 +59,9 @@ function DialogOverlay({
   );
 }
 
+/**
+ * Standard dialog body with Wale's popup chrome and an optional close button.
+ */
 function DialogContent({
   className,
   children,
@@ -83,6 +102,9 @@ function DialogContent({
   );
 }
 
+/**
+ * Small layout helper for dialog headings.
+ */
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -93,6 +115,10 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+/**
+ * Standard footer layout for dialog actions, with an optional secondary close
+ * button when the caller wants one in the action row.
+ */
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -120,6 +146,9 @@ function DialogFooter({
   );
 }
 
+/**
+ * Styled dialog title primitive.
+ */
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
@@ -130,6 +159,9 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   );
 }
 
+/**
+ * Styled dialog description primitive.
+ */
 function DialogDescription({
   className,
   ...props

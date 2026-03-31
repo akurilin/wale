@@ -15,6 +15,10 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { cn } from "@/lib/utils";
 
+/**
+ * Thin wrapper around assistant-ui's markdown renderer with Wale's preferred
+ * plugins and component map.
+ */
 const MarkdownTextImpl = () => {
   return (
     <MarkdownTextPrimitive
@@ -27,6 +31,9 @@ const MarkdownTextImpl = () => {
 
 export const MarkdownText = memo(MarkdownTextImpl);
 
+/**
+ * Adds a copy affordance above fenced code blocks rendered in assistant output.
+ */
 const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
   const { isCopied, copyToClipboard } = useCopyToClipboard();
   const onCopy = () => {
@@ -47,6 +54,11 @@ const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
   );
 };
 
+/**
+ * Provides a tiny copied-state wrapper around the Clipboard API for code block
+ * actions. The timeout is local to this hook so callers do not need to manage
+ * reset state themselves.
+ */
 const useCopyToClipboard = ({
   copiedDuration = 3000,
 }: {
@@ -66,6 +78,8 @@ const useCopyToClipboard = ({
   return { isCopied, copyToClipboard };
 };
 
+// Shared markdown element styling lives here so assistant messages render
+// consistently without scattering per-element class names through the thread UI.
 const defaultComponents = memoizeMarkdownComponents({
   h1: ({ className, ...props }) => (
     <h1

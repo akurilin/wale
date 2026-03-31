@@ -9,6 +9,11 @@ import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Root avatar wrapper used by the scaffolded attachment UI.
+ * The size prop is local to Wale and drives the shared styling contract for the
+ * related avatar subcomponents below.
+ */
 function Avatar({
   className,
   size = "default",
@@ -29,6 +34,9 @@ function Avatar({
   );
 }
 
+/**
+ * Styled avatar image primitive.
+ */
 function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return (
     <AvatarPrimitive.Image
@@ -42,6 +50,9 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   );
 }
 
+/**
+ * Fallback content shown while an avatar image is missing or loading.
+ */
 function AvatarFallback({
   className,
   ...props
@@ -58,6 +69,9 @@ function AvatarFallback({
   );
 }
 
+/**
+ * Small status badge that can be overlaid on top of an avatar.
+ */
 function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
@@ -74,6 +88,9 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
   );
 }
 
+/**
+ * Layout helper for overlapping avatar stacks.
+ */
 function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -87,6 +104,9 @@ function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+/**
+ * Fallback counter bubble for avatar groups with hidden overflow members.
+ */
 function AvatarGroupCount({
   className,
   ...props

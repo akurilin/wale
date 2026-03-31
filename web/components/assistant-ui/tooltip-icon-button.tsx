@@ -16,6 +16,11 @@ export type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
   side?: "top" | "bottom" | "left" | "right";
 };
 
+/**
+ * Standard icon-only button with a tooltip and accessible fallback label.
+ * This keeps the assistant UI's small action buttons visually consistent while
+ * still exposing a readable name to assistive technology.
+ */
 export const TooltipIconButton = forwardRef<
   HTMLButtonElement,
   TooltipIconButtonProps

@@ -26,6 +26,7 @@ const documentContextSchema = z
 const assistantRequestSchema = z.object({
   mode: z.literal("chat").default("chat"),
   messages: z.unknown(),
+  model: z.string().trim().min(1).optional(),
   document: documentHandleSchema.optional(),
   documentContext: documentContextSchema.optional(),
 });

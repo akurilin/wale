@@ -20,13 +20,55 @@ import {
   SquareIcon,
   TextSelectIcon,
 } from "lucide-react";
-import type { FC } from "react";
+import { type FC, useEffect, useState } from "react";
+
+type ModelOption = { id: string; displayName: string };
+
+/**
+ * Fetches available Anthropic models and renders a dropdown for switching.
+ */
+const ModelSelector: FC<{
+  modelId: string;
+  onModelChange: (id: string) => void;
+}> = ({ modelId, onModelChange }) => {
+  const [models, setModels] = useState<ModelOption[]>([]);
+
+  useEffect(() => {
+    fetch("/api/models")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.models) setModels(data.models);
+      })
+      .catch(() => {});
+  }, []);
+
+  if (models.length === 0) return null;
+
+  return (
+    <select
+      value={modelId}
+      onChange={(e) => onModelChange(e.target.value)}
+      className="w-full rounded-md border bg-background px-2 py-1.5 text-xs text-muted-foreground outline-none hover:border-ring/50 focus:border-ring/75"
+      aria-label="Select model"
+    >
+      {models.map((m) => (
+        <option key={m.id} value={m.id}>
+          {m.displayName}
+        </option>
+      ))}
+    </select>
+  );
+};
 
 /**
  * Composes the assistant conversation viewport, welcome state, and composer
  * into one cohesive sidebar UI.
  */
-export const Thread: FC<{ selectionText?: string }> = ({ selectionText }) => {
+export const Thread: FC<{
+  selectionText?: string;
+  modelId: string;
+  onModelChange: (id: string) => void;
+}> = ({ selectionText, modelId, onModelChange }) => {
   return (
     <ThreadPrimitive.Root
       className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
@@ -55,6 +97,9 @@ export const Thread: FC<{ selectionText?: string }> = ({ selectionText }) => {
         <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-(--composer-radius) bg-background pb-4 md:pb-6">
           <ThreadScrollToBottom />
           <Composer selectionText={selectionText} />
+          <div className="px-1">
+            <ModelSelector modelId={modelId} onModelChange={onModelChange} />
+          </div>
         </ThreadPrimitive.ViewportFooter>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>

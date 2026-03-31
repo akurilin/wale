@@ -1,5 +1,11 @@
 import fs from "fs/promises";
 import path from "path";
+import {
+  type DocumentMeta,
+  emptyMeta,
+  parseEnvelope,
+  serializeEnvelope,
+} from "./envelope";
 
 export const DATA_DIR = path.resolve(process.cwd(), "..", "data");
 export const TEMP_DATA_DIR = path.resolve("/tmp", "wale");
@@ -38,11 +44,11 @@ function resolveDocPath(
 }
 
 /**
- * Reads a document from storage and lazily creates an empty TipTap document
- * when the file does not exist yet. This keeps the rest of the app free from a
- * separate "create document first" bootstrap path.
+ * Reads the raw file content and returns it as a string. If the file does not
+ * exist, creates an empty envelope and persists it so the rest of the app
+ * doesn't need a separate bootstrap path.
  */
-export async function readDocument(
+async function readRawFile(
   filename: string,
   options: DocumentStorageOptions = {},
 ): Promise<string> {
@@ -53,7 +59,7 @@ export async function readDocument(
     return await fs.readFile(filepath, "utf-8");
   } catch (error: unknown) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
-      const content = JSON.stringify(EMPTY_DOCUMENT, null, 2);
+      const content = serializeEnvelope(emptyMeta(), EMPTY_DOCUMENT);
       await fs.mkdir(documentDirectory, { recursive: true });
       await fs.writeFile(filepath, content);
       return content;
@@ -63,8 +69,34 @@ export async function readDocument(
 }
 
 /**
- * Serializes a TipTap JSON document to disk using the same pretty-printed shape
- * that the read path and revision hashing logic expect.
+ * Reads a document from storage and returns only the TipTap doc portion.
+ * Callers (the editor, the API) never see the envelope metadata — they get the
+ * same JSON shape they've always expected.
+ */
+export async function readDocument(
+  filename: string,
+  options: DocumentStorageOptions = {},
+): Promise<string> {
+  const raw = await readRawFile(filename, options);
+  const { doc } = parseEnvelope(raw);
+  return JSON.stringify(doc, null, 2);
+}
+
+/**
+ * Returns the metadata portion of a document's envelope. Creates the file with
+ * empty meta if it does not exist yet.
+ */
+export async function readDocumentMeta(
+  filename: string,
+  options: DocumentStorageOptions = {},
+): Promise<DocumentMeta> {
+  const raw = await readRawFile(filename, options);
+  return parseEnvelope(raw).meta;
+}
+
+/**
+ * Persists a TipTap JSON document to disk inside an envelope. If the file
+ * already contains an envelope with metadata, the metadata is preserved.
  */
 export async function writeDocument(
   filename: string,
@@ -74,6 +106,33 @@ export async function writeDocument(
   const filepath = resolveDocPath(filename, options);
   const documentDirectory = getDocumentDirectory(options);
 
+  // Preserve existing meta if the file already exists
+  let meta = emptyMeta();
+  try {
+    const existing = await fs.readFile(filepath, "utf-8");
+    meta = parseEnvelope(existing).meta;
+  } catch {
+    // File doesn't exist yet — use empty meta
+  }
+
   await fs.mkdir(documentDirectory, { recursive: true });
-  await fs.writeFile(filepath, JSON.stringify(content, null, 2));
+  await fs.writeFile(filepath, serializeEnvelope(meta, content));
+}
+
+/**
+ * Atomically reads the document envelope, applies a mutating callback to its
+ * metadata, and writes it back. The document content is left untouched.
+ */
+export async function updateDocumentMeta(
+  filename: string,
+  options: DocumentStorageOptions = {},
+  updater: (meta: DocumentMeta) => void,
+): Promise<void> {
+  const filepath = resolveDocPath(filename, options);
+  const raw = await readRawFile(filename, options);
+  const { meta, doc } = parseEnvelope(raw);
+
+  updater(meta);
+
+  await fs.writeFile(filepath, serializeEnvelope(meta, doc));
 }

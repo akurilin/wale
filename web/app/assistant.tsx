@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import {
   AssistantChatTransport,
@@ -9,6 +9,9 @@ import {
 import type { Editor } from "@tiptap/core";
 import { Thread } from "@/components/assistant-ui/thread";
 import { saveDocumentToApi } from "@/lib/document/api";
+import type { DocumentMeta } from "@/lib/document/envelope";
+
+const DEFAULT_MODEL_ID = "claude-haiku-4-5";
 
 /**
  * Extracts the currently selected plain text from the editor for prompt
@@ -44,6 +47,36 @@ export const Assistant = ({
   useTempStorage: boolean;
 }) => {
   const [selectionText, setSelectionText] = useState<string | undefined>();
+  const [modelId, setModelId] = useState(DEFAULT_MODEL_ID);
+
+  // Load persisted model selection from document metadata on mount
+  useEffect(() => {
+    const params = new URLSearchParams({ file: filename });
+    if (useTempStorage) params.set("tmp", "true");
+
+    fetch(`/api/document/usage?${params.toString()}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((meta: DocumentMeta | null) => {
+        if (meta?.selectedModel) setModelId(meta.selectedModel);
+      })
+      .catch(() => {});
+  }, [filename, useTempStorage]);
+
+  const handleModelChange = useCallback(
+    (id: string) => {
+      setModelId(id);
+
+      const params = new URLSearchParams({ file: filename });
+      if (useTempStorage) params.set("tmp", "true");
+
+      fetch(`/api/document/usage?${params.toString()}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selectedModel: id }),
+      }).catch(() => {});
+    },
+    [filename, useTempStorage],
+  );
 
   useEffect(() => {
     if (!editor) return;
@@ -71,6 +104,7 @@ export const Assistant = ({
           body: {
             mode: "chat",
             messages,
+            model: modelId,
             document: {
               filename,
               temporary: useTempStorage,
@@ -91,7 +125,11 @@ export const Assistant = ({
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <div className="h-full">
-        <Thread selectionText={selectionText} />
+        <Thread
+          selectionText={selectionText}
+          modelId={modelId}
+          onModelChange={handleModelChange}
+        />
       </div>
     </AssistantRuntimeProvider>
   );

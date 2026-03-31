@@ -2,13 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockModel = { id: "mock-model" };
 
-const { convertToModelMessagesMock, streamTextMock } = vi.hoisted(() => ({
-  convertToModelMessagesMock: vi.fn(),
-  streamTextMock: vi.fn(),
-}));
+const { convertToModelMessagesMock, streamTextMock, updateDocumentMetaMock } =
+  vi.hoisted(() => ({
+    convertToModelMessagesMock: vi.fn(),
+    streamTextMock: vi.fn(),
+    updateDocumentMetaMock: vi.fn(),
+  }));
 
 vi.mock("./model", () => ({
-  model: mockModel,
+  createModel: () => mockModel,
   modelConfig: {
     provider: "Anthropic",
     modelId: "claude-haiku-4-5",
@@ -25,6 +27,10 @@ vi.mock("ai", async () => {
     streamText: streamTextMock,
   };
 });
+
+vi.mock("@/lib/document/storage", () => ({
+  updateDocumentMeta: updateDocumentMetaMock,
+}));
 
 import type { AssistantRequest } from "./types";
 const { runAssistant } = await import("./run-assistant");
@@ -53,6 +59,8 @@ describe("runAssistant", () => {
   beforeEach(() => {
     convertToModelMessagesMock.mockReset();
     streamTextMock.mockReset();
+    updateDocumentMetaMock.mockReset();
+    updateDocumentMetaMock.mockResolvedValue(undefined);
   });
 
   it("uses the server-owned prompt and validated messages", async () => {
@@ -105,5 +113,134 @@ describe("runAssistant", () => {
         ),
       }),
     );
+  });
+
+  it("passes an onFinish callback to streamText", async () => {
+    convertToModelMessagesMock.mockResolvedValue([]);
+    streamTextMock.mockReturnValue({
+      toUIMessageStreamResponse: vi.fn(),
+    });
+
+    await runAssistant(validRequest);
+
+    const streamTextArgs = streamTextMock.mock.calls[0][0];
+    expect(streamTextArgs.onFinish).toBeTypeOf("function");
+  });
+
+  it("onFinish accumulates token usage via updateDocumentMeta", async () => {
+    convertToModelMessagesMock.mockResolvedValue([]);
+    streamTextMock.mockReturnValue({
+      toUIMessageStreamResponse: vi.fn(),
+    });
+
+    await runAssistant(validRequest);
+
+    // Extract and invoke the onFinish callback
+    const streamTextArgs = streamTextMock.mock.calls[0][0];
+    const onFinish = streamTextArgs.onFinish;
+
+    onFinish({
+      totalUsage: {
+        inputTokens: 500,
+        outputTokens: 100,
+        totalTokens: 600,
+      },
+    });
+
+    // Allow the promise to resolve
+    await vi.waitFor(() => {
+      expect(updateDocumentMetaMock).toHaveBeenCalledWith(
+        "draft.json",
+        { temporary: true },
+        expect.any(Function),
+      );
+    });
+
+    // Verify the updater function accumulates correctly
+    const updater = updateDocumentMetaMock.mock.calls[0][2];
+    const meta = { usage: {} as Record<string, unknown> };
+    updater(meta);
+    expect(meta.usage["claude-haiku-4-5"]).toEqual({
+      inputTokens: 500,
+      outputTokens: 100,
+    });
+
+    // Call again to verify accumulation
+    updater(meta);
+    expect(meta.usage["claude-haiku-4-5"]).toEqual({
+      inputTokens: 1000,
+      outputTokens: 200,
+    });
+  });
+
+  it("skips usage tracking when there is no document", async () => {
+    const requestWithoutDoc: AssistantRequest = {
+      ...validRequest,
+      document: undefined,
+    };
+
+    convertToModelMessagesMock.mockResolvedValue([]);
+    streamTextMock.mockReturnValue({
+      toUIMessageStreamResponse: vi.fn(),
+    });
+
+    await runAssistant(requestWithoutDoc);
+
+    const streamTextArgs = streamTextMock.mock.calls[0][0];
+    streamTextArgs.onFinish({
+      totalUsage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+    });
+
+    // Give async operations a tick
+    await new Promise((r) => setTimeout(r, 10));
+    expect(updateDocumentMetaMock).not.toHaveBeenCalled();
+  });
+
+  it("skips usage tracking when tokens are zero", async () => {
+    convertToModelMessagesMock.mockResolvedValue([]);
+    streamTextMock.mockReturnValue({
+      toUIMessageStreamResponse: vi.fn(),
+    });
+
+    await runAssistant(validRequest);
+
+    const streamTextArgs = streamTextMock.mock.calls[0][0];
+    streamTextArgs.onFinish({
+      totalUsage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+    });
+
+    await new Promise((r) => setTimeout(r, 10));
+    expect(updateDocumentMetaMock).not.toHaveBeenCalled();
+  });
+
+  it("uses request model ID when provided", async () => {
+    const requestWithModel: AssistantRequest = {
+      ...validRequest,
+      model: "claude-sonnet-4-5",
+    };
+
+    convertToModelMessagesMock.mockResolvedValue([]);
+    streamTextMock.mockReturnValue({
+      toUIMessageStreamResponse: vi.fn(),
+    });
+
+    await runAssistant(requestWithModel);
+
+    const streamTextArgs = streamTextMock.mock.calls[0][0];
+    streamTextArgs.onFinish({
+      totalUsage: { inputTokens: 200, outputTokens: 80, totalTokens: 280 },
+    });
+
+    await vi.waitFor(() => {
+      expect(updateDocumentMetaMock).toHaveBeenCalled();
+    });
+
+    const updater = updateDocumentMetaMock.mock.calls[0][2];
+    const meta = { usage: {} as Record<string, unknown> };
+    updater(meta);
+    expect(meta.usage["claude-sonnet-4-5"]).toEqual({
+      inputTokens: 200,
+      outputTokens: 80,
+    });
   });
 });

@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
+import { TokenUsage } from "@/components/token-usage";
 import { useDocumentSync } from "@/lib/document/use-document-sync";
 import { Assistant } from "./assistant";
 
@@ -57,6 +58,7 @@ export function EditorPageClient({
           <EditorContent editor={editor} />
         </div>
       </div>
+      <TokenUsage filename={filename} useTempStorage={useTempStorage} />
       <div className="w-[400px] border-l border-border">
         <Assistant
           editor={editor}

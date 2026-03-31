@@ -16,7 +16,16 @@ export const modelConfig = {
     : "Claude Haiku 4.5",
 } as const;
 
-// Export the concrete model instance the assistant runtime streams against.
-export const model = useMockAssistantModel
-  ? createMockAssistantModel()
-  : anthropic(modelConfig.modelId);
+/**
+ * Creates a model instance for the given model ID. When the mock model is
+ * active the model ID is ignored and the deterministic mock is returned.
+ */
+export function createModel(modelId?: string) {
+  if (useMockAssistantModel) {
+    return createMockAssistantModel();
+  }
+  return anthropic(modelId ?? modelConfig.modelId);
+}
+
+// Default model instance for callers that don't need per-request selection.
+export const model = createModel();

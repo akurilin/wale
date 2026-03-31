@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { JSONContent } from "@tiptap/core";
+import { parseEnvelope } from "./envelope";
 import { TEMP_DATA_DIR } from "./storage";
 import {
   applyDocumentEdits,
@@ -141,9 +142,8 @@ describe("applyDocumentEdits", () => {
     });
     expect(result.revision).not.toBe(before.revision);
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content?.[0]).toEqual({
       type: "paragraph",
       content: [
@@ -211,9 +211,8 @@ describe("applyDocumentEdits", () => {
       revision: expect.any(String),
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content?.[0]).toEqual({
       type: "paragraph",
       content: [{ type: "text", text: "Changed elsewhere." }],
@@ -259,9 +258,8 @@ describe("applyDocumentEdits", () => {
       revision: before.revision,
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content?.[0]).toEqual({
       type: "paragraph",
       content: [{ type: "text", text: "Actual paragraph." }],
@@ -319,9 +317,8 @@ describe("applyDocumentEdits", () => {
       ],
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content?.[0].content).toEqual([
       { type: "text", text: "The " },
       { type: "text", text: "beginning", marks: [{ type: "bold" }] },
@@ -380,9 +377,8 @@ describe("applyDocumentEdits", () => {
       ],
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content?.[0].content).toEqual([
       { type: "text", text: "The " },
       { type: "text", text: "bold", marks: [{ type: "bold" }] },
@@ -438,9 +434,8 @@ describe("applyDocumentEdits", () => {
       revision: before.revision,
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content).toEqual([
       {
         type: "paragraph",
@@ -493,9 +488,8 @@ describe("editDocument", () => {
       updatedBlocks: [{ id: "0", type: "heading", text: "Section title" }],
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content?.[0]).toEqual({
       type: "heading",
       attrs: { level: 2 },
@@ -542,9 +536,8 @@ describe("editDocument", () => {
       updatedBlocks: [{ id: "0", type: "paragraph", text: "Make this bold." }],
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content?.[0]).toEqual({
       type: "paragraph",
       content: [
@@ -599,9 +592,8 @@ describe("editDocument", () => {
       ],
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content).toEqual([
       {
         type: "paragraph",
@@ -649,9 +641,8 @@ describe("editDocument", () => {
       updatedBlocks: [{ id: "0", type: "blockquote", text: "Quoted note." }],
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content?.[0]).toEqual({
       type: "blockquote",
       content: [
@@ -713,9 +704,8 @@ describe("editDocument", () => {
       revision: before.revision,
     });
 
-    const onDisk = JSON.parse(
-      await fs.readFile(filepath, "utf-8"),
-    ) as JSONContent;
+    const onDisk = parseEnvelope(await fs.readFile(filepath, "utf-8"))
+      .doc as JSONContent;
     expect(onDisk.content).toEqual([
       {
         type: "paragraph",

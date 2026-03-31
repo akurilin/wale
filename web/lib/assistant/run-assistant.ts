@@ -1,6 +1,7 @@
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
+import { updateDocumentMeta } from "@/lib/document/storage";
 import { buildDocumentTools } from "./document-tools";
-import { model } from "./model";
+import { createModel, modelConfig } from "./model";
 import { buildSystemPrompt } from "./prompt";
 import type { AssistantRequest } from "./types";
 
@@ -15,6 +16,9 @@ export async function runAssistant(request: AssistantRequest) {
     ? buildDocumentTools(request.document)
     : undefined;
 
+  const modelId = request.model ?? modelConfig.modelId;
+  const model = createModel(modelId);
+
   return streamText({
     model,
     messages,
@@ -24,5 +28,26 @@ export async function runAssistant(request: AssistantRequest) {
     }),
     tools,
     stopWhen: tools ? stepCountIs(5) : undefined,
+    onFinish: ({ totalUsage }) => {
+      if (!request.document) return;
+
+      const inputTokens = totalUsage.inputTokens ?? 0;
+      const outputTokens = totalUsage.outputTokens ?? 0;
+      if (inputTokens === 0 && outputTokens === 0) return;
+
+      updateDocumentMeta(
+        request.document.filename,
+        { temporary: request.document.temporary },
+        (meta) => {
+          const existing = meta.usage[modelId];
+          meta.usage[modelId] = {
+            inputTokens: (existing?.inputTokens ?? 0) + inputTokens,
+            outputTokens: (existing?.outputTokens ?? 0) + outputTokens,
+          };
+        },
+      ).catch((err) => {
+        console.error("Failed to update document usage metadata:", err);
+      });
+    },
   });
 }

@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wale Project Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+      :root {
+        --bg: #f6f4ef;
+        --fg: #1f2937;
+        --muted: #6b7280;
+        --border: #d1d5db;
+        --surface: #ffffff;
+        --surface-alt: #f9fafb;
+        --accent: #0f766e;
+        --accent-soft: #ccfbf1;
+        --accent-strong: #134e4a;
+        --warn: #92400e;
+        --warn-soft: #fef3c7;
+        --blue: #1d4ed8;
+        --blue-soft: #dbeafe;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #f8f7f3 0%, #eef2f7 100%);
+        color: var(--fg);
+        font-family:
+          "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        line-height: 1.55;
+      }
+
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 48px 20px 80px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        letter-spacing: -0.02em;
+      }
+
+      h1 {
+        font-size: 2.4rem;
+        font-weight: 700;
+      }
+
+      h2 {
+        font-size: 1.35rem;
+        font-weight: 650;
+        margin-bottom: 14px;
+      }
+
+      h3 {
+        font-size: 1rem;
+        font-weight: 650;
+        margin-bottom: 10px;
+      }
+
+      p {
+        margin: 0 0 14px;
+        color: #374151;
+      }
+
+      code {
+        font-family:
+          "SF Mono", "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+        font-size: 0.92em;
+        background: #eef2f7;
+        border-radius: 6px;
+        padding: 0.15em 0.4em;
+      }
+
+      .hero {
+        display: grid;
+        gap: 18px;
+        margin-bottom: 28px;
+      }
+
+      .subtitle {
+        max-width: 820px;
+        font-size: 1.05rem;
+        color: #4b5563;
+      }
+
+      .banner {
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        border: 1px solid #99f6e4;
+        border-radius: 16px;
+        padding: 16px 18px;
+      }
+
+      .section {
+        margin-top: 28px;
+      }
+
+      .diagram,
+      .card,
+      .table-wrap {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
+      }
+
+      .diagram {
+        padding: 18px 16px 8px;
+        overflow-x: auto;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .card p:last-child {
+        margin-bottom: 0;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+      }
+
+      .pill.accent {
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        border-color: #99f6e4;
+      }
+
+      .pill.blue {
+        background: var(--blue-soft);
+        color: #1e3a8a;
+        border-color: #bfdbfe;
+      }
+
+      .pill.warn {
+        background: var(--warn-soft);
+        color: var(--warn);
+        border-color: #fde68a;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 14px 16px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      th {
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        background: var(--surface-alt);
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .small {
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+
+      .list {
+        margin: 0;
+        padding-left: 18px;
+        color: #374151;
+      }
+
+      .list li + li {
+        margin-top: 8px;
+      }
+
+      @media (max-width: 720px) {
+        main {
+          padding: 32px 14px 60px;
+        }
+
+        h1 {
+          font-size: 1.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <div>
+          <h1>Wale Project Architecture</h1>
+        </div>
+        <p class="subtitle">
+          This document describes the current implementation of Wale as it
+          exists in the codebase today: a Next.js document editor with a TipTap
+          frontend, JSON-file backed document storage, and a backend-owned
+          assistant tool loop.
+        </p>
+        <div class="banner">
+          <strong>Current architectural center:</strong> the canonical document
+          lives on the backend as a JSON file. The editor syncs with that file,
+          and the assistant reads and edits the document only through backend
+          tools.
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>High-Level Module Map</h2>
+        <p>
+          The application has three main runtime zones:
+          <code>browser UI</code>, <code>Next.js API routes</code>, and
+          <code>file-backed document services</code>. The browser owns live
+          interaction and rendering. The server owns canonical reads, writes,
+          and assistant tool execution.
+        </p>
+        <div class="diagram">
+          <pre class="mermaid">
+flowchart LR
+  subgraph Browser["Browser / Client Runtime"]
+    Page["app/page.tsx<br/>route entry"]
+    EditorPage["app/editor-page-client.tsx<br/>TipTap editor shell"]
+    Sync["lib/document/use-document-sync.ts<br/>load, poll, save"]
+    AssistantUI["app/assistant.tsx<br/>assistant-ui transport"]
+    Thread["components/assistant-ui/thread.tsx<br/>chat UI"]
+  end
+
+  subgraph Server["Next.js Route Handlers"]
+    DocRoute["app/api/document/route.ts<br/>GET and PUT document JSON"]
+    ChatRoute["app/api/chat/route.ts<br/>parse assistant request"]
+  end
+
+  subgraph Assistant["Assistant Backend Layer"]
+    Types["lib/assistant/types.ts<br/>request validation"]
+    Run["lib/assistant/run-assistant.ts<br/>streamText tool loop"]
+    Prompt["lib/assistant/prompt.ts<br/>system instructions"]
+    Model["lib/assistant/model.ts<br/>Anthropic or mock model"]
+    Tools["lib/assistant/document-tools.ts<br/>tool declarations"]
+  end
+
+  subgraph Document["Document Service Layer"]
+    DocAPI["lib/document/api.ts<br/>client document fetch helpers"]
+    AgentDoc["lib/document/agent-document.ts<br/>assistant read and patch service"]
+    Storage["lib/document/storage.ts<br/>file IO and path safety"]
+    Files["data/ or /tmp/wale<br/>canonical JSON files"]
+  end
+
+  subgraph Tests["Validation Layer"]
+    Unit["Vitest<br/>storage, tool, route, assistant tests"]
+    E2E["Playwright<br/>editor sync and assistant edit flow"]
+  end
+
+  Page --> EditorPage
+  EditorPage --> Sync
+  EditorPage --> AssistantUI
+  AssistantUI --> Thread
+  AssistantUI --> DocAPI
+  Sync --> DocAPI
+  DocAPI --> DocRoute
+  AssistantUI --> ChatRoute
+  ChatRoute --> Types
+  ChatRoute --> Run
+  Run --> Prompt
+  Run --> Model
+  Run --> Tools
+  Tools --> AgentDoc
+  DocRoute --> Storage
+  AgentDoc --> Storage
+  Storage --> Files
+  Unit --> AgentDoc
+  Unit --> Run
+  Unit --> DocRoute
+  E2E --> AssistantUI
+  E2E --> Sync
+          </pre>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Runtime Responsibilities</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>Routing and App Shell</h3>
+            <p>
+              <code>web/app/page.tsx</code> resolves the current
+              <code>file</code> and <code>tmp</code> query params, redirects to
+              a default document when needed, and mounts the client editor page.
+            </p>
+            <div class="pill-row">
+              <span class="pill blue">Next.js App Router</span>
+              <span class="pill blue">URL-driven document selection</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Editor Runtime</h3>
+            <p>
+              <code>web/app/editor-page-client.tsx</code> creates the TipTap
+              editor with <code>StarterKit</code> and
+              <code>Placeholder</code>, mounts the editor content, and composes
+              the assistant pane beside it.
+            </p>
+            <div class="pill-row">
+              <span class="pill accent">TipTap</span>
+              <span class="pill accent">Single-page editor workspace</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Document Sync</h3>
+            <p>
+              <code>web/lib/document/use-document-sync.ts</code> owns the
+              browser-side sync contract: initial fetch, explicit
+              <code>Cmd+S</code> save, and background polling for external file
+              changes. It now guards against late initial loads overwriting
+              newer local state.
+            </p>
+            <div class="pill-row">
+              <span class="pill warn">One sync path</span>
+              <span class="pill warn">Canonical backend state</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Assistant Transport</h3>
+            <p>
+              <code>web/app/assistant.tsx</code> integrates
+              <code>@assistant-ui/react-ai-sdk</code>. Before sending a user
+              prompt, it saves the current editor JSON to the backend, includes
+              the current document handle, and forwards selection context when
+              available.
+            </p>
+            <div class="pill-row">
+              <span class="pill accent">assistant-ui</span>
+              <span class="pill blue">Backend-owned document tools</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Assistant Execution</h3>
+            <p>
+              <code>web/app/api/chat/route.ts</code> validates requests and
+              passes them to <code>web/lib/assistant/run-assistant.ts</code>,
+              which builds the server prompt, declares tools, and runs the
+              AI SDK <code>streamText</code> tool loop.
+            </p>
+            <div class="pill-row">
+              <span class="pill blue">AI SDK tool loop</span>
+              <span class="pill blue">Server-only execution</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <h3>Canonical Document Services</h3>
+            <p>
+              <code>web/lib/document/storage.ts</code> handles safe file IO.
+              <code>web/lib/document/agent-document.ts</code> exposes the
+              assistant-specific read and patch service on top of the stored
+              TipTap JSON, including revision hashing and exact block
+              replacement.
+            </p>
+            <div class="pill-row">
+              <span class="pill accent">JSON file store</span>
+              <span class="pill warn">Exact patch semantics</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Document Read/Write Flow</h2>
+        <p>
+          The editor does not write directly to the filesystem. It talks to the
+          document route, which delegates to the storage module. The same
+          storage module is used by assistant tools, which keeps one canonical
+          persistence path.
+        </p>
+        <div class="diagram">
+          <pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant E as TipTap Editor
+  participant S as useDocumentSync
+  participant A as /api/document
+  participant D as storage.ts
+  participant F as JSON file
+
+  U->>E: Type in editor
+  Note over E,S: Editor state is live in memory
+
+  alt Initial load
+    S->>A: GET ?file=...&tmp=...
+    A->>D: readDocument(filename)
+    D->>F: read file or create empty doc
+    F-->>D: raw JSON
+    D-->>A: raw JSON
+    A-->>S: JSON document
+    S-->>E: setContent(raw)
+  end
+
+  alt Explicit save
+    U->>E: Cmd+S / Ctrl+S
+    E->>S: getJSON()
+    S->>A: PUT { content }
+    A->>D: writeDocument(filename, content)
+    D->>F: write pretty JSON
+    F-->>D: ok
+    D-->>A: ok
+    A-->>S: { ok: true }
+  end
+
+  alt External change detection
+    S->>A: periodic GET
+    A->>D: readDocument(filename)
+    D->>F: read raw JSON
+    F-->>D: raw JSON
+    D-->>A: raw JSON
+    A-->>S: raw JSON
+    S-->>E: setContent(raw) if changed
+  end
+          </pre>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Assistant Tool Loop</h2>
+        <p>
+          The assistant uses backend-owned tools immediately. The browser does
+          not apply assistant edits itself. It only saves the current editor
+          state first, then asks the backend assistant to operate on the
+          canonical JSON file.
+        </p>
+        <div class="diagram">
+          <pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant B as Browser
+  participant C as /api/chat
+  participant R as run-assistant.ts
+  participant M as Model
+  participant T as document-tools.ts
+  participant G as agent-document.ts
+  participant F as JSON file
+
+  U->>B: "Rewrite this paragraph"
+  B->>F: save current editor JSON via /api/document
+  B->>C: POST messages + document handle + selectionText
+  C->>R: parse and run assistant
+  R->>M: system prompt + messages + read_document/apply_document_edits
+
+  M->>T: call read_document()
+  T->>G: readDocumentForAssistant(filename)
+  G->>F: read file
+  F-->>G: TipTap JSON
+  G-->>T: blocks + revision hash
+  T-->>M: tool result
+
+  M->>T: call apply_document_edits(baseRevision, edits)
+  T->>G: applyDocumentEdits(...)
+  G->>F: read file again
+  F-->>G: current JSON
+  G->>G: validate revision and expectedText
+  G->>F: write updated JSON
+  F-->>G: ok
+  G-->>T: ok + new revision + updated blocks
+  T-->>M: tool result
+
+  M-->>R: final assistant text
+  R-->>C: UI message stream
+  C-->>B: streamed assistant response
+  B->>F: document poll sees new JSON
+  B-->>B: editor refreshes from canonical state
+          </pre>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Current Module Inventory</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Key Files</th>
+                <th>Responsibility</th>
+                <th>Depends On</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Route entry</td>
+                <td><code>web/app/page.tsx</code></td>
+                <td>Resolve current document from query params and mount the editor page.</td>
+                <td>Next.js routing, <code>EditorPageClient</code></td>
+              </tr>
+              <tr>
+                <td>Editor shell</td>
+                <td><code>web/app/editor-page-client.tsx</code></td>
+                <td>Create the TipTap editor and compose the editor pane with the assistant pane.</td>
+                <td>TipTap, <code>useDocumentSync</code>, <code>Assistant</code></td>
+              </tr>
+              <tr>
+                <td>Assistant UI</td>
+                <td>
+                  <code>web/app/assistant.tsx</code><br />
+                  <code>web/components/assistant-ui/thread.tsx</code>
+                </td>
+                <td>Collect chat input, send requests, render the assistant thread and message controls.</td>
+                <td>assistant-ui runtime, editor selection, document API helpers</td>
+              </tr>
+              <tr>
+                <td>Document API</td>
+                <td><code>web/app/api/document/route.ts</code></td>
+                <td>Canonical HTTP interface for reading and writing document JSON.</td>
+                <td><code>storage.ts</code></td>
+              </tr>
+              <tr>
+                <td>Assistant API</td>
+                <td><code>web/app/api/chat/route.ts</code></td>
+                <td>Validate assistant requests and stream backend model output.</td>
+                <td><code>types.ts</code>, <code>run-assistant.ts</code></td>
+              </tr>
+              <tr>
+                <td>Assistant core</td>
+                <td>
+                  <code>web/lib/assistant/types.ts</code><br />
+                  <code>web/lib/assistant/prompt.ts</code><br />
+                  <code>web/lib/assistant/run-assistant.ts</code><br />
+                  <code>web/lib/assistant/model.ts</code>
+                </td>
+                <td>Define request shape, generate system instructions, choose the model, and run the tool loop.</td>
+                <td>AI SDK, Anthropic provider, document tools</td>
+              </tr>
+              <tr>
+                <td>Document tools</td>
+                <td>
+                  <code>web/lib/assistant/document-tools.ts</code><br />
+                  <code>web/lib/document/agent-document.ts</code>
+                </td>
+                <td>Expose <code>read_document</code> and <code>apply_document_edits</code> as exact backend tools over the canonical file.</td>
+                <td>AI SDK tool declarations, storage service</td>
+              </tr>
+              <tr>
+                <td>Storage and sync</td>
+                <td>
+                  <code>web/lib/document/storage.ts</code><br />
+                  <code>web/lib/document/api.ts</code><br />
+                  <code>web/lib/document/use-document-sync.ts</code>
+                </td>
+                <td>File IO, browser fetch helpers, and editor synchronization behavior.</td>
+                <td>Filesystem, fetch, TipTap editor instance</td>
+              </tr>
+              <tr>
+                <td>Testing</td>
+                <td>
+                  <code>web/lib/**/*.test.ts</code><br />
+                  <code>web/e2e/*.spec.ts</code><br />
+                  <code>web/playwright.config.ts</code><br />
+                  <code>web/vitest.config.ts</code>
+                </td>
+                <td>Unit coverage for storage, tools, routes, assistant integration, and full browser validation.</td>
+                <td>Vitest, Playwright, mock assistant model</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Design Rules That Shape The Current System</h2>
+        <ul class="list">
+          <li>
+            There is one canonical document source of truth:
+            the JSON file loaded through <code>storage.ts</code>.
+          </li>
+          <li>
+            The assistant does not patch the editor directly. It edits the
+            backend document through server tools and the editor observes the
+            change through normal sync.
+          </li>
+          <li>
+            Tool edits are exact, not fuzzy. Each edit carries a
+            <code>baseRevision</code>, a <code>blockId</code>, and an
+            <code>expectedText</code>.
+          </li>
+          <li>
+            The current assistant editing surface is intentionally narrow:
+            only top-level paragraphs and headings are exposed as editable
+            blocks.
+          </li>
+          <li>
+            Tests are part of the architecture. The tool layer is validated in
+            isolation before the model is allowed to use it, and the browser
+            flow is validated end to end with a deterministic mock model.
+          </li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <h2>How To Read This Codebase Quickly</h2>
+        <div class="cards">
+          <article class="card">
+            <h3>If you care about editor behavior</h3>
+            <p>
+              Start at <code>web/app/editor-page-client.tsx</code>, then read
+              <code>web/lib/document/use-document-sync.ts</code>, then
+              <code>web/app/api/document/route.ts</code>.
+            </p>
+          </article>
+          <article class="card">
+            <h3>If you care about assistant behavior</h3>
+            <p>
+              Start at <code>web/app/assistant.tsx</code>, then
+              <code>web/app/api/chat/route.ts</code>, then
+              <code>web/lib/assistant/run-assistant.ts</code>, then
+              <code>web/lib/assistant/document-tools.ts</code>.
+            </p>
+          </article>
+          <article class="card">
+            <h3>If you care about document edits</h3>
+            <p>
+              Read <code>web/lib/document/agent-document.ts</code> and its test
+              file first. That is the exact contract the model relies on.
+            </p>
+          </article>
+          <article class="card">
+            <h3>If you care about confidence</h3>
+            <p>
+              Read <code>web/lib/document/agent-document.test.ts</code> and
+              <code>web/e2e/assistant-document-tools.spec.ts</code>. They show
+              both the isolated tool semantics and the integrated browser flow.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section small">
+        <p>
+          This page is intentionally scoped to the code that exists right now,
+          not the broader long-term design in <code>docs/plan.md</code>.
+        </p>
+      </section>
+    </main>
+
+    <script>
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: "neutral",
+        fontFamily: "SF Pro Text, Helvetica Neue, Helvetica, Arial, sans-serif",
+        flowchart: {
+          curve: "basis",
+          padding: 18,
+        },
+        sequence: {
+          actorMargin: 50,
+          noteMargin: 14,
+          mirrorActors: false,
+          wrap: true,
+        },
+      });
+    </script>
+  </body>
+</html>

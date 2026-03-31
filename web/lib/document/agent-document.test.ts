@@ -3,7 +3,11 @@ import path from "path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { JSONContent } from "@tiptap/core";
 import { TEMP_DATA_DIR } from "./storage";
-import { applyDocumentEdits, readDocumentForAssistant } from "./agent-document";
+import {
+  applyDocumentEdits,
+  editDocument,
+  readDocumentForAssistant,
+} from "./agent-document";
 
 const testFiles: string[] = [];
 
@@ -72,6 +76,7 @@ describe("readDocumentForAssistant", () => {
     expect(result.blocks).toEqual([
       { id: "0", type: "heading", text: "Draft title" },
       { id: "1", type: "paragraph", text: "The opening paragraph." },
+      { id: "2", type: "blockquote", text: "Quoted note." },
     ]);
   });
 
@@ -430,6 +435,281 @@ describe("applyDocumentEdits", () => {
       ok: false,
       conflict:
         'Block 1 no longer matches the expected text. Expected "Wrong second paragraph." but found "Second paragraph."',
+      revision: before.revision,
+    });
+
+    const onDisk = JSON.parse(
+      await fs.readFile(filepath, "utf-8"),
+    ) as JSONContent;
+    expect(onDisk.content).toEqual([
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "First paragraph." }],
+      },
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Second paragraph." }],
+      },
+    ]);
+  });
+});
+
+describe("editDocument", () => {
+  it("converts a paragraph into a heading without rewriting its text", async () => {
+    const filename = `assistant-structural-heading-${Date.now()}.json`;
+    const filepath = registerTempFile(filename);
+    await writeTempDocument(filename, {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Section title" }],
+        },
+      ],
+    });
+
+    const before = await readDocumentForAssistant(filename, {
+      temporary: true,
+    });
+    const result = await editDocument(
+      filename,
+      {
+        baseRevision: before.revision,
+        operations: [
+          {
+            type: "set_block_type",
+            blockId: "0",
+            blockType: "heading",
+            level: 2,
+          },
+        ],
+      },
+      { temporary: true },
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      revision: expect.any(String),
+      updatedBlocks: [{ id: "0", type: "heading", text: "Section title" }],
+    });
+
+    const onDisk = JSON.parse(
+      await fs.readFile(filepath, "utf-8"),
+    ) as JSONContent;
+    expect(onDisk.content?.[0]).toEqual({
+      type: "heading",
+      attrs: { level: 2 },
+      content: [{ type: "text", text: "Section title" }],
+    });
+  });
+
+  it("applies a bold mark to an inline text range", async () => {
+    const filename = `assistant-structural-bold-${Date.now()}.json`;
+    const filepath = registerTempFile(filename);
+    await writeTempDocument(filename, {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Make this bold." }],
+        },
+      ],
+    });
+
+    const before = await readDocumentForAssistant(filename, {
+      temporary: true,
+    });
+    const result = await editDocument(
+      filename,
+      {
+        baseRevision: before.revision,
+        operations: [
+          {
+            type: "apply_mark",
+            blockId: "0",
+            from: 5,
+            to: 9,
+            mark: "bold",
+          },
+        ],
+      },
+      { temporary: true },
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      revision: expect.any(String),
+      updatedBlocks: [{ id: "0", type: "paragraph", text: "Make this bold." }],
+    });
+
+    const onDisk = JSON.parse(
+      await fs.readFile(filepath, "utf-8"),
+    ) as JSONContent;
+    expect(onDisk.content?.[0]).toEqual({
+      type: "paragraph",
+      content: [
+        { type: "text", text: "Make " },
+        { type: "text", text: "this", marks: [{ type: "bold" }] },
+        { type: "text", text: " bold." },
+      ],
+    });
+  });
+
+  it("inserts a new paragraph block at the requested index", async () => {
+    const filename = `assistant-structural-insert-${Date.now()}.json`;
+    const filepath = registerTempFile(filename);
+    await writeTempDocument(filename, {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "First paragraph." }],
+        },
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Third paragraph." }],
+        },
+      ],
+    });
+
+    const before = await readDocumentForAssistant(filename, {
+      temporary: true,
+    });
+    const result = await editDocument(
+      filename,
+      {
+        baseRevision: before.revision,
+        operations: [
+          {
+            type: "insert_block",
+            index: 1,
+            blockType: "paragraph",
+            text: "Second paragraph.",
+          },
+        ],
+      },
+      { temporary: true },
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      revision: expect.any(String),
+      updatedBlocks: [
+        { id: "1", type: "paragraph", text: "Second paragraph." },
+      ],
+    });
+
+    const onDisk = JSON.parse(
+      await fs.readFile(filepath, "utf-8"),
+    ) as JSONContent;
+    expect(onDisk.content).toEqual([
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "First paragraph." }],
+      },
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Second paragraph." }],
+      },
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Third paragraph." }],
+      },
+    ]);
+  });
+
+  it("wraps a top-level block in a blockquote", async () => {
+    const filename = `assistant-structural-quote-${Date.now()}.json`;
+    const filepath = registerTempFile(filename);
+    await writeTempDocument(filename, {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Quoted note." }],
+        },
+      ],
+    });
+
+    const before = await readDocumentForAssistant(filename, {
+      temporary: true,
+    });
+    const result = await editDocument(
+      filename,
+      {
+        baseRevision: before.revision,
+        operations: [{ type: "wrap_in_blockquote", blockId: "0" }],
+      },
+      { temporary: true },
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      revision: expect.any(String),
+      updatedBlocks: [{ id: "0", type: "blockquote", text: "Quoted note." }],
+    });
+
+    const onDisk = JSON.parse(
+      await fs.readFile(filepath, "utf-8"),
+    ) as JSONContent;
+    expect(onDisk.content?.[0]).toEqual({
+      type: "blockquote",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Quoted note." }],
+        },
+      ],
+    });
+  });
+
+  it("validates a batch before writing so invalid semantic edits stay atomic", async () => {
+    const filename = `assistant-structural-atomic-${Date.now()}.json`;
+    const filepath = registerTempFile(filename);
+    await writeTempDocument(filename, {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "First paragraph." }],
+        },
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Second paragraph." }],
+        },
+      ],
+    });
+
+    const before = await readDocumentForAssistant(filename, {
+      temporary: true,
+    });
+    const result = await editDocument(
+      filename,
+      {
+        baseRevision: before.revision,
+        operations: [
+          {
+            type: "set_block_type",
+            blockId: "0",
+            blockType: "heading",
+            level: 2,
+          },
+          {
+            type: "apply_mark",
+            blockId: "1",
+            from: 100,
+            to: 110,
+            mark: "italic",
+          },
+        ],
+      },
+      { temporary: true },
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      conflict:
+        'Mark range 100-110 is out of bounds for block 1 text "Second paragraph."',
       revision: before.revision,
     });
 

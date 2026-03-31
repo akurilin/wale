@@ -79,7 +79,7 @@ describe("runAssistant", () => {
         system: expect.stringContaining("This paragraph needs work."),
         tools: expect.objectContaining({
           read_document: expect.any(Object),
-          apply_document_edits: expect.any(Object),
+          edit_document: expect.any(Object),
         }),
         stopWhen: expect.any(Function),
       }),
@@ -95,6 +95,13 @@ describe("runAssistant", () => {
       expect.objectContaining({
         system: expect.stringContaining(
           "The current document is available through tools.",
+        ),
+      }),
+    );
+    expect(streamTextMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        system: expect.stringContaining(
+          "Use edit_document to modify the document.",
         ),
       }),
     );

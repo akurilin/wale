@@ -150,6 +150,42 @@ type ReadDocumentResult = {
 };
 
 /**
+ * Keeps the mock model deterministic while still exercising the semantic tool
+ * contract the real assistant will use for structured document edits.
+ */
+function buildRequestedOperations(
+  userText: string,
+  readResult: ReadDocumentResult,
+) {
+  const targetBlock =
+    readResult.blocks.find((block) => block.type === "paragraph") ??
+    readResult.blocks[0];
+
+  const headingMatch = userText.match(
+    /turn the first paragraph into a level\s*(\d)\s*heading/i,
+  );
+  if (headingMatch) {
+    return [
+      {
+        type: "set_block_type" as const,
+        blockId: targetBlock?.id ?? "0",
+        blockType: "heading" as const,
+        level: Number(headingMatch[1]) as 1 | 2 | 3,
+      },
+    ];
+  }
+
+  return [
+    {
+      type: "replace_text" as const,
+      blockId: targetBlock?.id ?? "0",
+      expectedText: targetBlock?.text ?? "",
+      newText: extractRequestedRewrite(userText),
+    },
+  ];
+}
+
+/**
  * Creates a deterministic assistant model for unit tests.
  * The mock always follows the same read -> apply edits -> confirm flow so the
  * surrounding tool wiring can be tested without a live model backend.
@@ -168,33 +204,18 @@ export function createMockAssistantModel() {
         return createToolStep("tool-read-document", "read_document", {});
       }
 
-      const applyResult = getToolResult<{ ok: boolean }>(
+      const editResult = getToolResult<{ ok: boolean }>(
         prompt,
-        "apply_document_edits",
+        "edit_document",
       );
 
-      if (!applyResult) {
-        const targetBlock = readResult.blocks.find(
-          (block) => block.type === "paragraph",
-        );
-        const replacementText = extractRequestedRewrite(
-          getLastUserText(prompt),
-        );
+      if (!editResult) {
+        const userText = getLastUserText(prompt);
 
-        return createToolStep(
-          "tool-apply-document-edits",
-          "apply_document_edits",
-          {
-            baseRevision: readResult.revision,
-            edits: [
-              {
-                blockId: targetBlock?.id ?? "0",
-                expectedText: targetBlock?.text ?? "",
-                newText: replacementText,
-              },
-            ],
-          },
-        );
+        return createToolStep("tool-edit-document", "edit_document", {
+          baseRevision: readResult.revision,
+          operations: buildRequestedOperations(userText, readResult),
+        });
       }
 
       return createTextStep("Updated the document using the available tools.");

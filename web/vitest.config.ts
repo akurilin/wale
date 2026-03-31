@@ -11,5 +11,8 @@ export default defineConfig({
     environment: "node",
     include: ["**/*.test.ts"],
     exclude: ["e2e/**", "node_modules/**", ".next/**", "playwright-report/**"],
+    fileParallelism: false,
+    maxConcurrency: 1,
+    maxWorkers: 1,
   },
 });

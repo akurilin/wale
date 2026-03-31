@@ -29,9 +29,10 @@ const buildChatContextPrompt = (
       [
         "The current document is available through tools.",
         "Use read_document to inspect the canonical document before making document-specific claims.",
-        "Use apply_document_edits to modify the document.",
-        "Do not claim an edit was made unless apply_document_edits returned ok: true.",
-        "When editing, copy the exact expectedText from read_document so conflicts are detected cleanly.",
+        "Use edit_document to modify the document.",
+        "Do not claim an edit was made unless edit_document returned ok: true.",
+        "Prefer semantic operations such as set_block_type, apply_mark, insert_block, and wrap_in_blockquote over rewriting raw document structure yourself.",
+        "When replacing text, copy the exact expectedText from read_document so conflicts are detected cleanly.",
       ].join(" "),
     );
   }

@@ -29,7 +29,7 @@ test.describe("Assistant Document Tools", () => {
     filesToCleanup.length = 0;
   });
 
-  test("reads and edits the document through backend tools", async ({
+  test("reads and performs a semantic block edit through backend tools", async ({
     page,
   }) => {
     const filename = `assistant-tools-${Date.now()}.json`;
@@ -44,9 +44,7 @@ test.describe("Assistant Document Tools", () => {
 
     await page
       .getByLabel("Message input")
-      .fill(
-        "Rewrite the first paragraph so it says exactly: The assistant rewrote this paragraph.",
-      );
+      .fill("Turn the first paragraph into a level 2 heading.");
     await page.getByLabel("Send message").click();
 
     await expect(
@@ -55,8 +53,12 @@ test.describe("Assistant Document Tools", () => {
 
     await expect(async () => {
       const json = await getEditorJSON(page);
+      expect(json?.content?.[0]).toMatchObject({
+        type: "heading",
+        attrs: { level: 2 },
+      });
       expect(extractText(json)).toContain(
-        "The assistant rewrote this paragraph.",
+        "Original paragraph written by the user.",
       );
     }).toPass({ timeout: 10_000 });
   });

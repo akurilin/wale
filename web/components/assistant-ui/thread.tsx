@@ -18,6 +18,7 @@ import {
   CopyIcon,
   RefreshCwIcon,
   SquareIcon,
+  TextSelectIcon,
 } from "lucide-react";
 import type { FC } from "react";
 
@@ -25,7 +26,7 @@ import type { FC } from "react";
  * Composes the assistant conversation viewport, welcome state, and composer
  * into one cohesive sidebar UI.
  */
-export const Thread: FC = () => {
+export const Thread: FC<{ selectionText?: string }> = ({ selectionText }) => {
   return (
     <ThreadPrimitive.Root
       className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
@@ -53,7 +54,7 @@ export const Thread: FC = () => {
 
         <ThreadPrimitive.ViewportFooter className="aui-thread-viewport-footer sticky bottom-0 mx-auto mt-auto flex w-full max-w-(--thread-max-width) flex-col gap-4 overflow-visible rounded-t-(--composer-radius) bg-background pb-4 md:pb-6">
           <ThreadScrollToBottom />
-          <Composer />
+          <Composer selectionText={selectionText} />
         </ThreadPrimitive.ViewportFooter>
       </ThreadPrimitive.Viewport>
     </ThreadPrimitive.Root>
@@ -91,13 +92,31 @@ const ThreadWelcome: FC = () => {
 };
 
 /**
+ * Shows a compact indicator inside the composer when the user has text selected
+ * in the editor, so they know the selection will be sent as additional context.
+ */
+const SelectionChip: FC<{ text: string }> = ({ text }) => {
+  const lines = text.split("\n").filter((l) => l.trim().length > 0).length;
+
+  return (
+    <div className="flex items-center gap-1.5 rounded-lg bg-muted/60 px-2.5 py-1 text-xs text-muted-foreground">
+      <TextSelectIcon className="size-3 shrink-0" />
+      <span className="min-w-0 truncate">
+        {lines <= 1 ? `"${text}"` : `${lines} lines selected`}
+      </span>
+    </div>
+  );
+};
+
+/**
  * Wraps the assistant-ui composer with the local visual styling used in the
  * sidebar.
  */
-const Composer: FC = () => {
+const Composer: FC<{ selectionText?: string }> = ({ selectionText }) => {
   return (
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
       <div className="flex w-full flex-col gap-2 rounded-(--composer-radius) border bg-background p-(--composer-padding) transition-shadow focus-within:border-ring/75 focus-within:ring-2 focus-within:ring-ring/20">
+        {selectionText && <SelectionChip text={selectionText} />}
         <ComposerPrimitive.Input
           placeholder="Send a message..."
           className="aui-composer-input max-h-32 min-h-10 w-full resize-none bg-transparent px-1.75 py-1 text-sm outline-none placeholder:text-muted-foreground/80"

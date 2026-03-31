@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import {
   AssistantChatTransport,
@@ -42,6 +43,21 @@ export const Assistant = ({
   filename: string;
   useTempStorage: boolean;
 }) => {
+  const [selectionText, setSelectionText] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleTransaction = () => {
+      setSelectionText(getSelectionText(editor));
+    };
+
+    editor.on("transaction", handleTransaction);
+    return () => {
+      editor.off("transaction", handleTransaction);
+    };
+  }, [editor]);
+
   const runtime = useChatRuntime({
     transport: new AssistantChatTransport({
       prepareSendMessagesRequest: async ({ messages }) => {
@@ -75,7 +91,7 @@ export const Assistant = ({
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <div className="h-full">
-        <Thread />
+        <Thread selectionText={selectionText} />
       </div>
     </AssistantRuntimeProvider>
   );

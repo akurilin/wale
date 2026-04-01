@@ -10,6 +10,7 @@ import type { Editor } from "@tiptap/core";
 import { Thread } from "@/components/assistant-ui/thread";
 import { saveDocumentToApi } from "@/lib/document/api";
 import type { DocumentMeta } from "@/lib/document/envelope";
+import { useChatPersistence } from "@/lib/assistant/use-chat-persistence";
 
 const DEFAULT_MODEL_ID = "claude-haiku-4-5";
 
@@ -121,6 +122,8 @@ export const Assistant = ({
       },
     }),
   });
+
+  useChatPersistence(runtime, filename, useTempStorage);
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>

@@ -40,5 +40,11 @@ export default async function Home({
     redirect(`/?${redirectParams.toString()}`);
   }
 
-  return <EditorPageClient filename={file} useTempStorage={useTempStorage} />;
+  return (
+    <EditorPageClient
+      key={file}
+      filename={file}
+      useTempStorage={useTempStorage}
+    />
+  );
 }

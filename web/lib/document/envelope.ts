@@ -14,6 +14,7 @@ export type DocumentMeta = {
 export type DocumentEnvelope = {
   meta: DocumentMeta;
   doc: unknown;
+  messages: unknown[];
 };
 
 /** Returns a fresh empty meta object. */
@@ -33,13 +34,22 @@ export function parseEnvelope(raw: string): DocumentEnvelope {
     return {
       meta: parsed.meta ?? emptyMeta(),
       doc: parsed.doc,
+      messages: Array.isArray(parsed.messages) ? parsed.messages : [],
     };
   }
 
-  return { meta: emptyMeta(), doc: parsed };
+  return { meta: emptyMeta(), doc: parsed, messages: [] };
 }
 
 /** Serializes an envelope to pretty-printed JSON for on-disk storage. */
-export function serializeEnvelope(meta: DocumentMeta, doc: unknown): string {
-  return JSON.stringify({ meta, doc }, null, 2);
+export function serializeEnvelope(
+  meta: DocumentMeta,
+  doc: unknown,
+  messages?: unknown[],
+): string {
+  const envelope: Record<string, unknown> = { meta, doc };
+  if (messages && messages.length > 0) {
+    envelope.messages = messages;
+  }
+  return JSON.stringify(envelope, null, 2);
 }

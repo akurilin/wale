@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { TEMP_DATA_DIR } from "../lib/document/storage";
+import { parseEnvelope } from "../lib/document/envelope";
 
 const mod = os.platform() === "darwin" ? "Meta" : "Control";
 
@@ -46,8 +47,10 @@ test.describe("Document Sync", () => {
 
     await expect(async () => {
       const raw = await fs.readFile(filepath, "utf-8");
-      const content: JSONContent = JSON.parse(raw);
-      expect(extractText(content)).toContain("Hello, this is a test document.");
+      const { doc } = parseEnvelope(raw);
+      expect(extractText(doc as JSONContent)).toContain(
+        "Hello, this is a test document.",
+      );
     }).toPass({ timeout: 5000 });
   });
 
@@ -117,8 +120,8 @@ test.describe("Document Sync", () => {
 
     await expect(async () => {
       const raw = await fs.readFile(filepath, "utf-8");
-      const content: JSONContent = JSON.parse(raw);
-      expect(content.type).toBe("doc");
+      const { doc } = parseEnvelope(raw);
+      expect((doc as JSONContent).type).toBe("doc");
     }).toPass({ timeout: 5000 });
   });
 

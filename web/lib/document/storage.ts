@@ -106,17 +106,20 @@ export async function writeDocument(
   const filepath = resolveDocPath(filename, options);
   const documentDirectory = getDocumentDirectory(options);
 
-  // Preserve existing meta if the file already exists
+  // Preserve existing meta and messages if the file already exists
   let meta = emptyMeta();
+  let messages: unknown[] = [];
   try {
     const existing = await fs.readFile(filepath, "utf-8");
-    meta = parseEnvelope(existing).meta;
+    const envelope = parseEnvelope(existing);
+    meta = envelope.meta;
+    messages = envelope.messages;
   } catch {
-    // File doesn't exist yet — use empty meta
+    // File doesn't exist yet — use empty defaults
   }
 
   await fs.mkdir(documentDirectory, { recursive: true });
-  await fs.writeFile(filepath, serializeEnvelope(meta, content));
+  await fs.writeFile(filepath, serializeEnvelope(meta, content, messages));
 }
 
 /**
@@ -130,9 +133,95 @@ export async function updateDocumentMeta(
 ): Promise<void> {
   const filepath = resolveDocPath(filename, options);
   const raw = await readRawFile(filename, options);
-  const { meta, doc } = parseEnvelope(raw);
+  const { meta, doc, messages } = parseEnvelope(raw);
 
   updater(meta);
 
-  await fs.writeFile(filepath, serializeEnvelope(meta, doc));
+  await fs.writeFile(filepath, serializeEnvelope(meta, doc, messages));
+}
+
+/**
+ * Returns all JSON document filenames in the storage directory. Non-JSON files
+ * (like .DS_Store) are excluded. Creates the directory if it doesn't exist.
+ */
+export async function listDocuments(
+  options: DocumentStorageOptions = {},
+): Promise<string[]> {
+  const dir = getDocumentDirectory(options);
+  try {
+    const entries = await fs.readdir(dir);
+    return entries.filter((name) => name.endsWith(".json"));
+  } catch (error: unknown) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+      await fs.mkdir(dir, { recursive: true });
+      return [];
+    }
+    throw error;
+  }
+}
+
+/**
+ * Renames a document file on disk. Throws if the target name already exists
+ * or the source does not exist. The full envelope (doc, meta, messages) moves
+ * intact since it's a filesystem-level rename.
+ */
+export async function renameDocument(
+  oldName: string,
+  newName: string,
+  options: DocumentStorageOptions = {},
+): Promise<void> {
+  const oldPath = resolveDocPath(oldName, options);
+  const newPath = resolveDocPath(newName, options);
+
+  // Check target doesn't already exist
+  try {
+    await fs.access(newPath);
+    throw new Error(`File "${newName}" already exists.`);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes("already exists")) {
+      throw error;
+    }
+    // ENOENT is expected — target doesn't exist, safe to proceed
+  }
+
+  await fs.rename(oldPath, newPath);
+}
+
+/**
+ * Deletes a document file from disk. Throws if the file does not exist.
+ */
+export async function deleteDocument(
+  filename: string,
+  options: DocumentStorageOptions = {},
+): Promise<void> {
+  const filepath = resolveDocPath(filename, options);
+  await fs.unlink(filepath);
+}
+
+/**
+ * Returns the persisted chat messages from a document's envelope.
+ * Creates the file with an empty document if it doesn't exist yet.
+ */
+export async function readDocumentMessages(
+  filename: string,
+  options: DocumentStorageOptions = {},
+): Promise<unknown[]> {
+  const raw = await readRawFile(filename, options);
+  return parseEnvelope(raw).messages;
+}
+
+/**
+ * Persists chat messages into the document envelope without touching the
+ * document content or metadata.
+ */
+export async function writeDocumentMessages(
+  filename: string,
+  messages: unknown[],
+  options: DocumentStorageOptions = {},
+): Promise<void> {
+  const filepath = resolveDocPath(filename, options);
+  const raw = await readRawFile(filename, options);
+  const { meta, doc } = parseEnvelope(raw);
+
+  await fs.writeFile(filepath, serializeEnvelope(meta, doc, messages));
 }

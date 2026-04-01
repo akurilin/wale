@@ -105,7 +105,7 @@ export function TokenUsage({
   const { totalCost, hasUnknownModel } = computeCost(usage);
 
   return (
-    <div className="fixed right-[416px] bottom-4 z-10 rounded-lg border bg-background/80 px-3 py-2 text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
+    <div className="fixed bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-lg border bg-background/80 px-3 py-2 text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
       <div className="flex items-center gap-3">
         <span title="Input tokens">{formatTokens(totalInput)} in</span>
         <span title="Output tokens">{formatTokens(totalOutput)} out</span>

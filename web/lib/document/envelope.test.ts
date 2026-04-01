@@ -80,6 +80,77 @@ describe("serializeEnvelope", () => {
   });
 });
 
+describe("parseEnvelope (messages)", () => {
+  it("extracts messages array when present in envelope", () => {
+    const messages = [
+      { id: "1", role: "user", content: "Hello" },
+      { id: "2", role: "assistant", content: "Hi there!" },
+    ];
+    const envelope = { meta: metaWithUsage, doc: bareTipTapDoc, messages };
+    const result = parseEnvelope(JSON.stringify(envelope));
+
+    expect(result.messages).toEqual(messages);
+  });
+
+  it("returns empty array when messages field is missing", () => {
+    const envelope = { meta: metaWithUsage, doc: bareTipTapDoc };
+    const result = parseEnvelope(JSON.stringify(envelope));
+
+    expect(result.messages).toEqual([]);
+  });
+
+  it("returns empty array for bare TipTap documents", () => {
+    const result = parseEnvelope(JSON.stringify(bareTipTapDoc));
+
+    expect(result.messages).toEqual([]);
+  });
+});
+
+describe("serializeEnvelope (messages)", () => {
+  it("includes messages in output when provided", () => {
+    const messages = [{ id: "1", role: "user", content: "Hello" }];
+    const serialized = serializeEnvelope(
+      metaWithUsage,
+      bareTipTapDoc,
+      messages,
+    );
+    const parsed = JSON.parse(serialized);
+
+    expect(parsed.messages).toEqual(messages);
+  });
+
+  it("omits messages key when array is empty", () => {
+    const serialized = serializeEnvelope(metaWithUsage, bareTipTapDoc, []);
+    const parsed = JSON.parse(serialized);
+
+    expect(parsed).not.toHaveProperty("messages");
+  });
+
+  it("omits messages key when not provided", () => {
+    const serialized = serializeEnvelope(metaWithUsage, bareTipTapDoc);
+    const parsed = JSON.parse(serialized);
+
+    expect(parsed).not.toHaveProperty("messages");
+  });
+
+  it("round-trips messages through serialize → parse", () => {
+    const messages = [
+      { id: "1", role: "user", content: "Hello" },
+      { id: "2", role: "assistant", content: "Hi!" },
+    ];
+    const serialized = serializeEnvelope(
+      metaWithUsage,
+      bareTipTapDoc,
+      messages,
+    );
+    const result = parseEnvelope(serialized);
+
+    expect(result.messages).toEqual(messages);
+    expect(result.meta).toEqual(metaWithUsage);
+    expect(result.doc).toEqual(bareTipTapDoc);
+  });
+});
+
 describe("emptyMeta", () => {
   it("returns a fresh object each time", () => {
     const a = emptyMeta();

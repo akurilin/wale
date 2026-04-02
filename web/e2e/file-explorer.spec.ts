@@ -121,6 +121,7 @@ test.describe("File Explorer", () => {
     // Hover over f2 to reveal the delete button
     const f2Item = explorer.getByText(f2.replace(".json", "")).locator("..");
     await f2Item.hover();
+    page.once("dialog", (dialog) => dialog.accept());
     await f2Item.getByTitle(`Delete ${f2}`).click();
 
     // f2 should disappear from the list

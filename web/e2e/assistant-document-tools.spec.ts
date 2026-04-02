@@ -37,16 +37,31 @@ test.describe("Assistant Document Tools", () => {
     const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
-    const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
+    const docWithParagraph = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "Original paragraph written by the user.",
+            },
+          ],
+        },
+      ],
+    };
     await fs.mkdir(TEMP_DATA_DIR, { recursive: true });
-    await fs.writeFile(filepath, serializeEnvelope(emptyMeta(), emptyDoc));
+    await fs.writeFile(
+      filepath,
+      serializeEnvelope(emptyMeta(), docWithParagraph),
+    );
 
     await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
-
-    const editor = page.locator(".tiptap");
-    await editor.click();
-    await page.keyboard.type("Original paragraph written by the user.");
+    await expect(page.locator(".tiptap")).toContainText(
+      "Original paragraph written by the user.",
+    );
 
     await page
       .getByLabel("Message input")

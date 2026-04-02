@@ -37,6 +37,8 @@ const branchOutputRoot = path.join(
   "wale",
   getSanitizedBranchName(),
 );
+const ciOutputRoot = __dirname;
+const outputRoot = process.env.CI ? ciOutputRoot : branchOutputRoot;
 
 export default defineConfig({
   testDir: "e2e",
@@ -44,12 +46,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1,
-  outputDir: path.join(branchOutputRoot, "test-results"),
+  outputDir: path.join(outputRoot, "test-results"),
   reporter: [
-    [
-      "html",
-      { outputFolder: path.join(branchOutputRoot, "playwright-report") },
-    ],
+    ["html", { outputFolder: path.join(outputRoot, "playwright-report") }],
   ],
   use: {
     baseURL: "http://localhost:3100",
@@ -63,7 +62,7 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      "NEXT_DIST_DIR=.next-playwright PORT=3100 WALE_ASSISTANT_MODEL=mock-document-edit ./scripts/with-node.sh npm run dev",
+      "NEXT_DIST_DIR=.next-playwright PORT=3100 WALE_ASSISTANT_MODEL=mock-document-edit npm run dev",
     url: "http://localhost:3100",
     reuseExistingServer: false,
     timeout: 120_000,

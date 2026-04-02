@@ -4,9 +4,24 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { TEMP_DATA_DIR } from "../lib/document/storage";
-import { parseEnvelope } from "../lib/document/envelope";
+import {
+  emptyMeta,
+  parseEnvelope,
+  serializeEnvelope,
+} from "../lib/document/envelope";
 
 const mod = os.platform() === "darwin" ? "Meta" : "Control";
+
+const EMPTY_DOC = {
+  type: "doc" as const,
+  content: [{ type: "paragraph" as const }],
+};
+
+/** Creates an empty document on disk so page.tsx's existence check passes. */
+async function seedFile(filepath: string): Promise<void> {
+  await fs.mkdir(path.dirname(filepath), { recursive: true });
+  await fs.writeFile(filepath, serializeEnvelope(emptyMeta(), EMPTY_DOC));
+}
 
 async function getEditorJSON(page: Page): Promise<JSONContent | null> {
   return page.evaluate(() => window.tiptapEditor?.getJSON() ?? null);
@@ -36,6 +51,7 @@ test.describe("Document Sync", () => {
     const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
+    await seedFile(filepath);
     await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
 
@@ -59,6 +75,7 @@ test.describe("Document Sync", () => {
     const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
+    await seedFile(filepath);
     await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
 
@@ -84,6 +101,7 @@ test.describe("Document Sync", () => {
     const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
+    await seedFile(filepath);
     await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);
 
@@ -110,30 +128,29 @@ test.describe("Document Sync", () => {
     expect(extractText(json)).toContain("Extra text after save.");
   });
 
-  test("opening a non-existent file creates it on disk", async ({ page }) => {
-    const filename = `test-create-${Date.now()}.json`;
+  test("nonexistent file shows empty state instead of the editor", async ({
+    page,
+  }) => {
+    const filename = `test-missing-${Date.now()}.json`;
+
+    await page.goto(`/?file=${filename}&tmp=true`);
+
+    // Should not render the editor — the TipTap instance should never appear.
+    await expect(page.locator(".tiptap")).not.toBeVisible({ timeout: 3000 });
+  });
+
+  test("missing file param opens the first available file", async ({
+    page,
+  }) => {
+    const filename = `test-first-${Date.now()}.json`;
     const filepath = path.join(TEMP_DATA_DIR, filename);
     filesToCleanup.push(filepath);
 
-    await page.goto(`/?file=${filename}&tmp=true`);
-    await page.waitForFunction(() => !!window.tiptapEditor);
-
-    await expect(async () => {
-      const raw = await fs.readFile(filepath, "utf-8");
-      const { doc } = parseEnvelope(raw);
-      expect((doc as JSONContent).type).toBe("doc");
-    }).toPass({ timeout: 5000 });
-  });
-
-  test("missing file param redirects to the default temp document", async ({
-    page,
-  }) => {
-    const filepath = path.join(TEMP_DATA_DIR, "default.json");
-    filesToCleanup.push(filepath);
+    await seedFile(filepath);
 
     await page.goto("/?tmp=true");
-    await page.waitForURL("**/?file=default.json&tmp=true");
+    await page.waitForURL(`**/?file=*&tmp=true`);
 
-    expect(page.url()).toContain("/?file=default.json&tmp=true");
+    expect(page.url()).toContain(`file=`);
   });
 });

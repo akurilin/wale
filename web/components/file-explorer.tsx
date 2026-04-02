@@ -21,9 +21,9 @@ export function FileExplorer({
   useTempStorage,
   onSelectFile,
 }: {
-  activeFile: string;
+  activeFile: string | null;
   useTempStorage: boolean;
-  onSelectFile: (filename: string) => void;
+  onSelectFile: (filename: string | null) => void;
 }) {
   const [files, setFiles] = useState<string[]>([]);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -98,9 +98,7 @@ export function FileExplorer({
         await fetchFiles();
         if (filename === activeFile) {
           const remaining = files.filter((f) => f !== filename);
-          if (remaining.length > 0) {
-            onSelectFile(remaining[0]);
-          }
+          onSelectFile(remaining.length > 0 ? remaining[0] : null);
         }
       }
     } catch {

@@ -1,5 +1,14 @@
-import { readDocument, writeDocument } from "@/lib/document/storage";
+import {
+  isValidFilename,
+  readDocument,
+  writeDocument,
+} from "@/lib/document/storage";
 import { type NextRequest, NextResponse } from "next/server";
+
+const INVALID_FILE = NextResponse.json(
+  { error: "Invalid filename." },
+  { status: 400 },
+);
 
 /**
  * Returns the raw TipTap JSON document for the requested file handle.
@@ -9,8 +18,8 @@ import { type NextRequest, NextResponse } from "next/server";
 export async function GET(req: NextRequest) {
   const file = req.nextUrl.searchParams.get("file");
   const useTempStorage = req.nextUrl.searchParams.get("tmp") === "true";
-  if (!file) {
-    return NextResponse.json({ error: "Missing file param." }, { status: 400 });
+  if (!file || !isValidFilename(file)) {
+    return INVALID_FILE;
   }
 
   try {
@@ -34,8 +43,8 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const file = req.nextUrl.searchParams.get("file");
   const useTempStorage = req.nextUrl.searchParams.get("tmp") === "true";
-  if (!file) {
-    return NextResponse.json({ error: "Missing file param." }, { status: 400 });
+  if (!file || !isValidFilename(file)) {
+    return INVALID_FILE;
   }
 
   let body: { content?: unknown };

@@ -1,5 +1,6 @@
 import {
   deleteDocument,
+  isValidFilename,
   listDocuments,
   renameDocument,
   writeDocument,
@@ -44,6 +45,10 @@ export async function POST(req: Request) {
     const existing = await listDocuments({ temporary: useTempStorage });
     let filename = body.name;
 
+    if (filename && !isValidFilename(filename)) {
+      return NextResponse.json({ error: "Invalid filename." }, { status: 400 });
+    }
+
     if (!filename) {
       let n = 1;
       while (existing.includes(`untitled-${n}.json`)) {
@@ -87,6 +92,10 @@ export async function PATCH(req: Request) {
     );
   }
 
+  if (!isValidFilename(body.oldName) || !isValidFilename(body.newName)) {
+    return NextResponse.json({ error: "Invalid filename." }, { status: 400 });
+  }
+
   try {
     await renameDocument(body.oldName, body.newName, {
       temporary: useTempStorage,
@@ -112,8 +121,8 @@ export async function DELETE(req: Request) {
   const file = searchParams.get("file");
   const useTempStorage = searchParams.get("tmp") === "true";
 
-  if (!file) {
-    return NextResponse.json({ error: "Missing file param." }, { status: 400 });
+  if (!file || !isValidFilename(file)) {
+    return NextResponse.json({ error: "Invalid filename." }, { status: 400 });
   }
 
   try {

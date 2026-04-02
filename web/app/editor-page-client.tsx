@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import type { Editor } from "@tiptap/core";
@@ -12,6 +12,8 @@ import { UnsavedChangesDialog } from "@/components/unsaved-changes-dialog";
 import { useDocumentSync } from "@/lib/document/use-document-sync";
 import { useDirtyTracker } from "@/lib/document/use-dirty-tracker";
 import { Assistant } from "./assistant";
+
+const LAST_FILE_KEY = "wale:lastOpenedFile";
 
 declare global {
   interface Window {
@@ -35,6 +37,7 @@ export function EditorPageClient({
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
     null,
   );
+  const didPersist = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -52,6 +55,14 @@ export function EditorPageClient({
   useDocumentSync(editor, filename, useTempStorage);
   const { isDirty, markClean } = useDirtyTracker(editor);
 
+  // Remember the last opened file so we can reopen it on next visit.
+  useEffect(() => {
+    if (!didPersist.current) {
+      localStorage.setItem(LAST_FILE_KEY, filename);
+      didPersist.current = true;
+    }
+  }, [filename]);
+
   useEffect(() => {
     if (editor && process.env.NODE_ENV !== "production") {
       window.tiptapEditor = editor;
@@ -65,6 +76,7 @@ export function EditorPageClient({
     (targetFile: string) => {
       if (targetFile === filename) return;
 
+      localStorage.setItem(LAST_FILE_KEY, targetFile);
       const params = new URLSearchParams({ file: targetFile });
       if (useTempStorage) params.set("tmp", "true");
       router.push(`/?${params.toString()}`);
@@ -72,8 +84,18 @@ export function EditorPageClient({
     [filename, useTempStorage, router],
   );
 
+  /** Navigate to the empty state (no file selected). */
+  const navigateHome = useCallback(() => {
+    localStorage.removeItem(LAST_FILE_KEY);
+    router.push(useTempStorage ? "/?tmp=true" : "/");
+  }, [useTempStorage, router]);
+
   const handleSelectFile = useCallback(
-    (targetFile: string) => {
+    (targetFile: string | null) => {
+      if (targetFile === null) {
+        navigateHome();
+        return;
+      }
       if (targetFile === filename) return;
 
       if (isDirty) {
@@ -82,7 +104,7 @@ export function EditorPageClient({
         navigateToFile(targetFile);
       }
     },
-    [filename, isDirty, navigateToFile],
+    [filename, isDirty, navigateToFile, navigateHome],
   );
 
   const handleDiscardAndNavigate = useCallback(() => {

@@ -10,6 +10,38 @@ import {
 export const DATA_DIR = path.resolve(process.cwd(), "..", "data");
 export const TEMP_DATA_DIR = path.resolve("/tmp", "wale");
 
+/**
+ * Regex for valid document filenames: one or more alphanumerics, hyphens, or
+ * underscores, followed by `.json`. No spaces, path separators, or shell-unsafe
+ * characters are allowed.
+ */
+const VALID_FILENAME_RE = /^[a-zA-Z0-9_-]+\.json$/;
+
+/**
+ * Returns true when `name` is a safe, well-formed document filename.
+ * Rejects path traversal, empty strings, and names with characters that could
+ * cause trouble on the filesystem or in URLs.
+ */
+export function isValidFilename(name: string): boolean {
+  return VALID_FILENAME_RE.test(name);
+}
+
+/**
+ * Checks whether a document file exists on disk without creating it.
+ */
+export async function documentExists(
+  filename: string,
+  options: DocumentStorageOptions = {},
+): Promise<boolean> {
+  const filepath = resolveDocPath(filename, options);
+  try {
+    await fs.access(filepath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const EMPTY_DOCUMENT = {
   type: "doc" as const,
   content: [{ type: "paragraph" as const }],

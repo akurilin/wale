@@ -1,8 +1,14 @@
 import {
+  isValidFilename,
   readDocumentMessages,
   writeDocumentMessages,
 } from "@/lib/document/storage";
 import { NextResponse } from "next/server";
+
+const INVALID_FILE = NextResponse.json(
+  { error: "Invalid filename." },
+  { status: 400 },
+);
 
 /** Returns persisted chat messages for a document. */
 export async function GET(req: Request) {
@@ -10,8 +16,8 @@ export async function GET(req: Request) {
   const file = searchParams.get("file");
   const useTempStorage = searchParams.get("tmp") === "true";
 
-  if (!file) {
-    return NextResponse.json({ error: "Missing file param." }, { status: 400 });
+  if (!file || !isValidFilename(file)) {
+    return INVALID_FILE;
   }
 
   try {
@@ -33,8 +39,8 @@ export async function PUT(req: Request) {
   const file = searchParams.get("file");
   const useTempStorage = searchParams.get("tmp") === "true";
 
-  if (!file) {
-    return NextResponse.json({ error: "Missing file param." }, { status: 400 });
+  if (!file || !isValidFilename(file)) {
+    return INVALID_FILE;
   }
 
   let body: { messages?: unknown };

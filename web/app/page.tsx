@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
+import { documentExists, isValidFilename } from "@/lib/document/storage";
 import { EditorPageClient } from "./editor-page-client";
+import { NoFileSelected } from "./no-file-selected";
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -16,8 +18,9 @@ function getSingleParam(
 
 /**
  * Server entry point for the editor page.
- * It redirects legacy or incomplete URLs into the canonical `?file=` shape so
- * the client editor can assume it always receives an explicit document target.
+ * When a `?file=` param is present, renders the editor for that document.
+ * Otherwise, hands off to NoFileSelected which reopens the last file,
+ * falls back to the first available file, or shows an empty state.
  */
 export default async function Home({
   searchParams,
@@ -29,15 +32,26 @@ export default async function Home({
   const legacyDoc = getSingleParam(params.doc);
   const useTempStorage = getSingleParam(params.tmp) === "true";
 
-  if (!file) {
-    const redirectParams = new URLSearchParams();
-    redirectParams.set("file", legacyDoc || "default.json");
-
-    if (useTempStorage) {
-      redirectParams.set("tmp", "true");
-    }
-
+  // Redirect legacy ?doc= URLs to the canonical ?file= shape.
+  if (!file && legacyDoc) {
+    const redirectParams = new URLSearchParams({ file: legacyDoc });
+    if (useTempStorage) redirectParams.set("tmp", "true");
     redirect(`/?${redirectParams.toString()}`);
+  }
+
+  if (!file) {
+    return <NoFileSelected useTempStorage={useTempStorage} />;
+  }
+
+  // Reject invalid or nonexistent filenames — show the empty state without
+  // trying to auto-resolve to a different file.
+  if (
+    !isValidFilename(file) ||
+    !(await documentExists(file, { temporary: useTempStorage }))
+  ) {
+    return (
+      <NoFileSelected useTempStorage={useTempStorage} autoResolve={false} />
+    );
   }
 
   return (

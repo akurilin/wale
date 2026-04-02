@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { TEMP_DATA_DIR } from "../lib/document/storage";
+import { emptyMeta, serializeEnvelope } from "../lib/document/envelope";
 
 const mod = os.platform() === "darwin" ? "Meta" : "Control";
 const emptyDocument: JSONContent = {
@@ -37,7 +38,11 @@ test.describe("TipTap Editor", () => {
     const filename = `editor-${Date.now()}-${Math.random()
       .toString(36)
       .slice(2)}.json`;
-    filesToCleanup.push(path.join(TEMP_DATA_DIR, filename));
+    const filepath = path.join(TEMP_DATA_DIR, filename);
+    filesToCleanup.push(filepath);
+
+    await fs.mkdir(TEMP_DATA_DIR, { recursive: true });
+    await fs.writeFile(filepath, serializeEnvelope(emptyMeta(), emptyDocument));
 
     await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);

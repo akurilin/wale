@@ -3,6 +3,7 @@ import type { JSONContent } from "@tiptap/core";
 import fs from "fs/promises";
 import path from "path";
 import { TEMP_DATA_DIR } from "../lib/document/storage";
+import { emptyMeta, serializeEnvelope } from "../lib/document/envelope";
 
 async function getEditorJSON(page: Page): Promise<JSONContent | null> {
   return page.evaluate(() => window.tiptapEditor?.getJSON() ?? null);
@@ -33,7 +34,12 @@ test.describe("Assistant Document Tools", () => {
     page,
   }) => {
     const filename = `assistant-tools-${Date.now()}.json`;
-    filesToCleanup.push(path.join(TEMP_DATA_DIR, filename));
+    const filepath = path.join(TEMP_DATA_DIR, filename);
+    filesToCleanup.push(filepath);
+
+    const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
+    await fs.mkdir(TEMP_DATA_DIR, { recursive: true });
+    await fs.writeFile(filepath, serializeEnvelope(emptyMeta(), emptyDoc));
 
     await page.goto(`/?file=${filename}&tmp=true`);
     await page.waitForFunction(() => !!window.tiptapEditor);

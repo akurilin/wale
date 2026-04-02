@@ -88,6 +88,9 @@ export function FileExplorer({
   };
 
   const handleDelete = async (filename: string) => {
+    const displayName = filename.replace(/\.json$/, "");
+    if (!window.confirm(`Delete "${displayName}"?`)) return;
+
     const params = new URLSearchParams({ file: filename });
     if (useTempStorage) params.set("tmp", "true");
     try {
@@ -227,7 +230,7 @@ export function FileExplorer({
               </div>
             ) : (
               <button
-                className="min-w-0 flex-1 truncate text-left"
+                className="min-w-0 flex-1 cursor-pointer truncate text-left"
                 onClick={() => onSelectFile(filename)}
                 onDoubleClick={(e) => {
                   e.preventDefault();
@@ -244,10 +247,10 @@ export function FileExplorer({
                   e.stopPropagation();
                   handleDelete(filename);
                 }}
-                className="ml-1 hidden rounded px-1 py-0.5 text-xs text-muted-foreground hover:text-destructive group-hover:block"
+                className="ml-1 hidden cursor-pointer rounded px-1 py-0.5 text-xs text-muted-foreground hover:text-destructive group-hover:block"
                 title={`Delete ${filename}`}
               >
-                ×
+                🗑
               </button>
             )}
           </div>
